@@ -25,7 +25,7 @@ class RefreshTunnel(TunnelEntity, ButtonEntity):
     def __init__(self, coordinator, entry_id, code):
         super().__init__(coordinator, entry_id, code)
         self._attr_unique_id = f"{entry_id}_{code}_refresh"
-        self._attr_name = f"Refresh tunnel {code}"
+        self._attr_name = "Refresh exit node"
         self._attr_icon = TUNNEL_ICONS["refresh"]
 
     async def async_press(self):

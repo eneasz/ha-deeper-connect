@@ -9,5 +9,5 @@
     "error": {"cannot_connect": "Cannot reach the device", "invalid_auth": "Invalid credentials", "unknown": "Unexpected error"},
     "abort": {"already_configured": "Device already configured", "reauth_successful": "Re-authentication successful"}
   },
-  "options": {"step": {"init": {"title": "Deeper Connect options", "data": {"scan_interval": "Polling interval (seconds)"}}}}
+  "options": {"step": {"init": {"title": "Deeper Connect options", "description": "City-level tunnel locations send only the tunnel exit-node IPs to ipinfo.io (fallback: geojs.io). Off by default; country is always shown without any lookup.", "data": {"scan_interval": "Polling interval (seconds)", "geo_lookup": "Look up exit-node city and map position online"}}}}
 }

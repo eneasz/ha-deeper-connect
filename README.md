@@ -21,7 +21,7 @@ and the admin username/password. Reauth and polling interval (default 60 s) are 
 | | |
 |---|---|
 | **Health** | `Health` (ok / warning / problem, with reasons), `Health problem`, `Tunnel problem`, `WAN connected` |
-| **Per tunnel** | active nodes, exit IP, problem flag, **Refresh tunnel** button (picks a new exit node) |
+| **Per tunnel** | Each tunnel is its **own sub-device** (e.g. *Tunnel AU (🇦🇺 Australia)*) grouping: location, active nodes, exit IP, problem flag, **Refresh exit node** button and (optional) a map position |
 | **Resources** | CPU, memory, temperature, uptime, sessions (total / tunnel), clients online |
 | **Traffic** | live up/down speed, local/client traffic totals, routed and saved traffic, blocked requests |
 | **Network** | public IP, WAN status, connection mode, routing (DPN) mode, node load-balancing mode |
@@ -32,6 +32,16 @@ and the admin username/password. Reauth and polling interval (default 60 s) are 
 A tunnel is *unhealthy* when it has no active node or no exit IP. `Health` goes to *problem* for WAN down,
 unhealthy tunnels or temperature ≥ 85 °C, and to *warning* for CPU/memory ≥ 90 % (15-min average), temperature ≥ 75 °C,
 a nearly full session table, or a pending firmware update.
+
+## Tunnel locations
+Every tunnel has a **Location** sensor showing where its exit node is (flag, country and the device's region code) —
+this works offline from the tunnel's country code.
+
+For **city-level location and a map pin** per tunnel, open the integration → *Configure* → enable
+*Look up exit-node city and map position online*. This is **off by default** because it sends the tunnel
+exit-node IP addresses (not your own, and no credentials) to [ipinfo.io](https://ipinfo.io), falling back to
+[geojs.io](https://www.geojs.io). Results are cached until the exit node changes. Accuracy is city-level at best.
+The map pins appear as `device_tracker` entities and work with the Map card.
 
 ## Verification status
 Verified on hardware: login, all read-only sensors, per-tunnel refresh.

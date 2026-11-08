@@ -8,7 +8,7 @@ from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import callback
 
 from .api import DeeperAuthError, DeeperClient, DeeperConnectionError
-from .const import CONF_SCAN_INTERVAL, DEFAULT_HOST, DEFAULT_SCAN_INTERVAL, DOMAIN, MIN_SCAN_INTERVAL
+from .const import CONF_GEO_LOOKUP, CONF_SCAN_INTERVAL, DEFAULT_HOST, DEFAULT_SCAN_INTERVAL, DOMAIN, MIN_SCAN_INTERVAL
 
 
 async def _validate(data: dict) -> tuple[str | None, str | None]:
@@ -76,4 +76,5 @@ class DeeperOptionsFlow(OptionsFlow):
             return self.async_create_entry(data=user_input)
         cur = self.config_entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
         return self.async_show_form(step_id="init", data_schema=vol.Schema({
-            vol.Required(CONF_SCAN_INTERVAL, default=cur): vol.All(int, vol.Range(min=MIN_SCAN_INTERVAL, max=3600))}))
+            vol.Required(CONF_SCAN_INTERVAL, default=cur): vol.All(int, vol.Range(min=MIN_SCAN_INTERVAL, max=3600)),
+            vol.Required(CONF_GEO_LOOKUP, default=self.config_entry.options.get(CONF_GEO_LOOKUP, False)): bool}))

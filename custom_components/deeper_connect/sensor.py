@@ -11,6 +11,7 @@ from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfDataRate, Unit
 
 from .const import ICONS, TUNNEL_ICONS
 from .entity import DeeperEntity, TunnelEntity, add_tunnel_entities
+from .location import tunnel_location
 from .util import avg_last, compute_health, last, parse_size, parse_uptime, to_float
 
 
@@ -111,7 +112,7 @@ async def async_setup_entry(hass, entry, add):
     coordinator = entry.runtime_data
     add([DeeperSensor(coordinator, entry.entry_id, desc) for desc in SENSORS])
     add_tunnel_entities(coordinator, entry.entry_id, add,
-                        lambda c, e, code: [TunnelNodes(c, e, code), TunnelIp(c, e, code)])
+                        lambda c, e, code: [TunnelLocation(c, e, code), TunnelNodes(c, e, code), TunnelIp(c, e, code)])
 
 
 class DeeperSensor(DeeperEntity, SensorEntity):
@@ -152,7 +153,7 @@ class TunnelNodes(TunnelEntity, SensorEntity):
     def __init__(self, coordinator, entry_id, code):
         super().__init__(coordinator, entry_id, code)
         self._attr_unique_id = f"{entry_id}_{code}_nodes"
-        self._attr_name = f"Tunnel {code} active nodes"
+        self._attr_name = "Active nodes"
         self._attr_icon = TUNNEL_ICONS["nodes"]
 
     @property
@@ -164,7 +165,7 @@ class TunnelIp(TunnelEntity, SensorEntity):
     def __init__(self, coordinator, entry_id, code):
         super().__init__(coordinator, entry_id, code)
         self._attr_unique_id = f"{entry_id}_{code}_ip"
-        self._attr_name = f"Tunnel {code} exit IP"
+        self._attr_name = "Exit IP"
         self._attr_icon = TUNNEL_ICONS["ip"]
 
     @property
@@ -174,3 +175,26 @@ class TunnelIp(TunnelEntity, SensorEntity):
     @property
     def extra_state_attributes(self):
         return {"region": self.tunnel.get("regionCode"), "country": self.tunnel.get("countryCode")}
+
+
+class TunnelLocation(TunnelEntity, SensorEntity):
+    """Where the tunnel's current exit node is (country always; city when geo lookup is enabled)."""
+
+    def __init__(self, coordinator, entry_id, code):
+        super().__init__(coordinator, entry_id, code)
+        self._attr_unique_id = f"{entry_id}_{code}_location"
+        self._attr_name = "Location"
+        self._attr_icon = TUNNEL_ICONS["location"]
+
+    def _loc(self) -> dict:
+        return tunnel_location(self.tunnel, self.coordinator.data.get("geo"))
+
+    @property
+    def native_value(self):
+        return self._loc()["label"]
+
+    @property
+    def extra_state_attributes(self):
+        loc = self._loc()
+        return {k: loc[k] for k in ("flag", "country", "country_code", "city", "region", "latitude", "longitude", "org")
+                if loc.get(k) is not None} | {"exit_ip": self.tunnel.get("activeIp"), "tunnel_region": self.tunnel.get("regionCode")}

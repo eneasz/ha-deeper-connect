@@ -9,10 +9,12 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
+from .geo import GeoLocator
 from .api import DeeperAuthError, DeeperClient, DeeperError
-from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN, SLOW_EVERY
+from .const import CONF_GEO_LOOKUP, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN, SLOW_EVERY
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,6 +55,7 @@ class DeeperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.client = client
         self.session = session
         self._slow: dict[str, Any] = {}
+        self.geo = GeoLocator(async_get_clientsession(hass)) if entry.options.get(CONF_GEO_LOOKUP) else None
         self._polls = 0
 
     async def _fetch(self, path: str) -> Any:
@@ -82,5 +85,11 @@ class DeeperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise UpdateFailed(str(err)) from err
         data.update(self._slow)
         data["tunnels"] = {t["tunnelCode"]: t for t in tunnels if isinstance(t, dict) and "tunnelCode" in t}
+        data["geo"] = {}
+        if self.geo:
+            ips = {t.get("activeIp") for t in data["tunnels"].values() if t.get("activeIp")}
+            for ip, res in zip(ips, await asyncio.gather(*(self.geo.lookup(i) for i in ips))):
+                if res:
+                    data["geo"][ip] = res
         data["wifi"] = (data.get("wifi") or {}).get("workingInfo", {})
         return data

@@ -5,6 +5,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
+from .location import tunnel_title
 
 
 class DeeperEntity(CoordinatorEntity):
@@ -33,6 +34,17 @@ class TunnelEntity(DeeperEntity):
     def __init__(self, coordinator, entry_id: str, code: str) -> None:
         super().__init__(coordinator, entry_id)
         self.code = code
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Each tunnel is its own sub-device so its entities are grouped together."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, f"{self._entry_id}_{self.code}")},
+            name=tunnel_title(self.tunnel or {"tunnelCode": self.code}),
+            manufacturer="Deeper Network",
+            model="DPN tunnel",
+            via_device=(DOMAIN, self._entry_id),
+        )
 
     @property
     def tunnel(self) -> dict:

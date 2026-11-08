@@ -11,7 +11,7 @@ def data():
 
 def test_imports():
     import importlib
-    for m in ("api", "coordinator", "config_flow", "sensor", "binary_sensor", "button", "switch", "update", "diagnostics"):
+    for m in ("api", "coordinator", "config_flow", "sensor", "binary_sensor", "button", "switch", "update", "diagnostics", "device_tracker", "location", "geo"):
         importlib.import_module(f"deeper_connect.{m}")
 
 
@@ -70,3 +70,79 @@ def test_every_entity_has_an_icon_or_device_class():
     from deeper_connect.const import ICONS
     for s in (*SENSORS, *BINARY_SENSORS):
         assert s.device_class or s.key in ICONS, f"{s.key} would show a generic icon"
+
+
+def test_tunnel_location_and_devices():
+    from types import SimpleNamespace
+    from deeper_connect.location import tunnel_location, tunnel_title
+    from deeper_connect.sensor import TunnelLocation, TunnelNodes, TunnelIp
+    from deeper_connect.binary_sensor import TunnelProblem
+    from deeper_connect.button import RefreshTunnel
+    from deeper_connect.device_tracker import TunnelTracker
+
+    d = data()
+    au = d["tunnels"]["AU"]
+    # offline baseline: country only
+    loc = tunnel_location(au, {})
+    assert loc["label"] == "Australia" and loc["flag"] == "🇦🇺" and loc["latitude"] is None
+    assert tunnel_title(au) == "Tunnel AU (🇦🇺 Australia)"
+    assert tunnel_title({"tunnelCode": "UB"}) == "Tunnel UB"
+    # with geo data the exit IP wins
+    geo = {au["activeIp"]: {"city": "Sydney", "region": "NSW", "country_code": "AU", "latitude": -33.87, "longitude": 151.2}}
+    assert tunnel_location(au, geo)["label"] == "Sydney, Australia"
+
+    coord = SimpleNamespace(data={**d, "geo": geo}, last_update_success=True,
+                            async_add_listener=lambda *a, **k: (lambda: None), config_entry=SimpleNamespace(data={"host": "x"}))
+    kinds = (TunnelLocation, TunnelNodes, TunnelIp, TunnelProblem, RefreshTunnel, TunnelTracker)
+    ents = [k(coord, "e1", "AU") for k in kinds]
+    # every tunnel entity shares ONE sub-device linked to the main device
+    ids = {tuple(e.device_info["identifiers"])[0] for e in ents}
+    assert ids == {("deeper_connect", "e1_AU")}
+    assert all(e.device_info["via_device"] == ("deeper_connect", "e1") for e in ents)
+    assert len({e.unique_id for e in ents}) == len(ents)
+    loc_sensor, tracker = ents[0], ents[-1]
+    assert loc_sensor.native_value == "Sydney, Australia"
+    assert loc_sensor.extra_state_attributes["flag"] == "🇦🇺"
+    assert (tracker.latitude, tracker.longitude) == (-33.87, 151.2) and tracker.available
+    # no geo data -> tracker unavailable, location still shows the country
+    coord.data = {**d, "geo": {}}
+    assert not tracker.available and loc_sensor.native_value == "Australia"
+
+
+def test_geo_parsers():
+    from deeper_connect.geo import _from_geojs, _from_ipinfo
+    r = _from_ipinfo({"city": "Warsaw", "region": "Mazovia", "country": "PL", "loc": "52.2,21.0", "org": "AS1 X"})
+    assert (r["city"], r["country_code"], r["latitude"], r["longitude"]) == ("Warsaw", "PL", 52.2, 21.0)
+    r = _from_geojs({"country_code": "US", "latitude": "37.7", "longitude": "-97.8", "organization_name": "G"})
+    assert r["country_code"] == "US" and r["latitude"] == 37.7 and r["city"] is None
+    assert _from_ipinfo({}) is None and _from_geojs({}) is None
+
+
+def test_geo_locator_falls_back_and_caches():
+    import asyncio, aiohttp
+    from deeper_connect import geo
+
+    calls = []
+
+    class Resp:
+        def __init__(self, url): self.url = url
+        async def __aenter__(self):
+            calls.append(self.url)
+            if "ipinfo" in self.url: raise aiohttp.ClientConnectionError("blocked")
+            return self
+        async def __aexit__(self, *a): return False
+        def raise_for_status(self): pass
+        async def json(self, content_type=None): return {"country_code": "PL", "latitude": "52.2", "longitude": "21.0"}
+
+    class Sess:
+        def get(self, url, **kw): return Resp(url)
+
+    async def run():
+        g = geo.GeoLocator(Sess())
+        a = await g.lookup("198.51.100.1")
+        b = await g.lookup("198.51.100.1")
+        return a, b
+
+    a, b = asyncio.run(run())
+    assert a["country_code"] == "PL" and a is b
+    assert len(calls) == 2  # ipinfo failed, geojs ok, second lookup served from cache
