@@ -25,7 +25,11 @@ class DeeperCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self) -> dict:
         try:
-            return {"tunnels": await self.client.tunnels(), "speed": await self.client.speed()}
+            return {
+                "tunnels": {t["tunnelCode"]: t for t in await self.client.tunnels()},
+                "network": await self.client.network(),
+                "wifi": (await self.client.wifi()).get("workingInfo", {}),
+            }
         except DeeperAuthError as err:
             raise ConfigEntryAuthFailed from err
         except DeeperError as err:

@@ -86,11 +86,15 @@ class DeeperClient:
     async def tunnels(self) -> Any:
         return await self.get("/api/smartRoute/listTunnels")
 
-    async def speed(self) -> Any:
-        return await self.get("/api/speedometer")
+    async def network(self) -> Any:
+        return await self.get("/api/system-info/network-address")
 
-    async def refresh_tunnel(self, payload: dict) -> Any:
-        return await self.post("/api/smartRoute/refreshTunnel", payload)
+    async def wifi(self) -> Any:
+        return await self.get("/api/wifi/workingInfo")
+
+    async def refresh_tunnel(self, tunnel_code: str) -> Any:
+        # Payload assumed from UI code; UNVERIFIED on hardware.
+        return await self.post("/api/smartRoute/refreshTunnel", {"tunnelCode": tunnel_code})
 
     async def reboot(self) -> Any:
         return await self.post("/api/admin/reboot")
