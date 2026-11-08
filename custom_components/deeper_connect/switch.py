@@ -39,9 +39,8 @@ SWITCHES: tuple[DeeperSwitchDescription, ...] = (
                             set_fn=lambda c, v, d: c.set_udp_server(v)),
     DeeperSwitchDescription(key="auto_update", name="Auto-update", is_on_fn=_flag("autoupdate", "autoUpdate"),
                             set_fn=lambda c, v, d: c.set_auto_update(v)),
-    # Request body inferred from the config the device reports: off until verified on hardware.
     DeeperSwitchDescription(key="auto_reboot", name="Scheduled reboot", is_on_fn=_flag("autoreboot", "on"),
-                            set_fn=_reboot_cfg, entity_registry_enabled_default=False),
+                            set_fn=_reboot_cfg),
 )
 
 

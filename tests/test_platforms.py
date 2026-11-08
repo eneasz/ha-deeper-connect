@@ -312,12 +312,13 @@ def test_controls():
     with pytest.raises(HomeAssistantError):  # remembered full tunnel FR isn't one of the user's tunnels
         run(rm.async_select_option("full"))
     lb = NodeSelectionSelect(coord, "e1")
+    assert lb.entity_registry_enabled_default is True
     assert lb.current_option == "none"; run(lb.async_select_option("rr"))
 
     sw = {s.key: DeeperSwitch(coord, "e1", s) for s in SWITCHES}
     assert sw["auto_update"].is_on is True and sw["ssl_bypass"].is_on is False and sw["udp_server"].is_on is False
     assert sw["auto_reboot"].is_on is True
-    assert [k for k, v in sw.items() if v.entity_registry_enabled_default] == ["ads_filter", "ssl_bypass", "udp_server", "auto_update"]
+    assert all(v.entity_registry_enabled_default for v in sw.values())
     run(sw["auto_update"].async_turn_off()); run(sw["ssl_bypass"].async_turn_on()); run(sw["auto_reboot"].async_turn_off())
 
     rt = RebootTime(coord, "e1")

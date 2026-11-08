@@ -39,13 +39,13 @@ a nearly full session table, or a pending firmware update.
 |---|---|---|
 | `switch` YouTube ad blocking, SSL bypass, UDP server, Auto-update | toggle those device settings | yes |
 | `select` Routing mode (smart / full / disabled) | switch the device routing mode | **no** (see note) |
-| `select` Node selection mode (regular / random / domain-aware / round-robin) | how connections spread over a tunnel's nodes | **no** |
-| `switch` Scheduled reboot + `time` Scheduled reboot time | the device's automatic reboot | **no** |
+| `select` Node selection mode (regular / random / domain-aware / round-robin) | how connections spread over a tunnel's nodes | yes |
+| `switch` Scheduled reboot + `time` Scheduled reboot time | the device's automatic reboot | yes |
 | `select` per app | app relocation (see below) | yes, for apps you customised |
 | `button` Reboot, Refresh exit node | reboot / pick a new exit node | Reboot: **no** |
 | services `set_routing_mode`, `set_app_relocation` | the same from automations | n/a |
 
-Entities marked "no" are off by default until confirmed on hardware; enable them under the device's entities.
+Routing mode and Reboot are off by default (enable them under the device's entities).
 **Routing mode note:** the device does not report its kill-switch state, so changing the mode from HA sends *kill switch = off*.
 Full mode uses the device's remembered full-mode tunnel; if that isn't one of your tunnels use the `set_routing_mode` service with `tunnel`.
 Bandwidth sharing and WAN access are deliberately **read-only**: opening your connection to other people's traffic or to the
@@ -90,7 +90,8 @@ The map pins appear as `device_tracker` entities and work with the Map card.
 
 ## Verification status
 Verified on hardware: login, all read-only sensors, per-tunnel refresh.
-The settings controls above use the web UI's own request bodies and are covered by unit tests; those not enabled by default are the ones not yet confirmed on hardware.
+The settings controls use the web UI's own request bodies; the device accepted each of them (ad blocking, SSL bypass, UDP, auto-update, node selection, reboot schedule)
+when the current value was re-sent. Changing routing mode and rebooting have not been exercised on hardware.
 App relocation is verified on hardware: setting an app to a tunnel and clearing it again. Setting `direct` uses the same call and the UI's `LL` code but has not been tried on hardware.
 **Unverified (disabled by default):** Reboot button, Ad filter and SSL bypass switches — request bodies are inferred from the
 web UI. Reports welcome.

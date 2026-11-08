@@ -1,4 +1,4 @@
-"""Scheduled-reboot time. Request body inferred from the reported config: disabled by default."""
+"""Scheduled-reboot time."""
 from __future__ import annotations
 
 from datetime import time
@@ -17,7 +17,6 @@ async def async_setup_entry(hass, entry, add):
 
 class RebootTime(DeeperEntity, TimeEntity):
     _attr_name = "Scheduled reboot time"
-    _attr_entity_registry_enabled_default = False
 
     def __init__(self, coordinator, entry_id) -> None:
         super().__init__(coordinator, entry_id)

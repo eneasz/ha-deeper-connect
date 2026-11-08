@@ -105,11 +105,10 @@ NODE_MODES = ["none", "random", "domain", "rr"]
 
 
 class NodeSelectionSelect(DeeperEntity, SelectEntity):
-    """How connections are spread over a tunnel's nodes. Request body inferred: disabled by default."""
+    """How connections are spread over a tunnel's nodes."""
 
     _attr_translation_key = "node_selection"
     _attr_options = NODE_MODES
-    _attr_entity_registry_enabled_default = False
 
     def __init__(self, coordinator, entry_id) -> None:
         super().__init__(coordinator, entry_id)
