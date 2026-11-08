@@ -73,7 +73,7 @@ The map pins appear as `device_tracker` entities and work with the Map card.
 
 ## Verification status
 Verified on hardware: login, all read-only sensors, per-tunnel refresh.
-App relocation reads are verified; **changing** an app's relocation uses the web UI's own request bodies and is covered by unit tests but not yet confirmed on hardware.
+App relocation is verified on hardware: setting an app to a tunnel and clearing it again. Setting `direct` uses the same call and the UI's `LL` code but has not been tried on hardware.
 **Unverified (disabled by default):** Reboot button, Ad filter and SSL bypass switches — request bodies are inferred from the
 web UI. Reports welcome.
 
