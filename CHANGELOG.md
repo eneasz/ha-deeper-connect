@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1
+- Location sensor now reports whether the city lookup is enabled (`city_lookup` attribute).
+- Releases are published automatically from the matching changelog section when a `v*` tag is pushed.
+
 ## 0.4.0
 - Each tunnel is its own sub-device grouping its location, nodes, exit IP, problem flag and refresh button.
 - Tunnel *Location* sensor (country, offline); optional city lookup and map pin per tunnel (opt-in, ipinfo.io / geojs.io).

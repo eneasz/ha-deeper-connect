@@ -197,4 +197,6 @@ class TunnelLocation(TunnelEntity, SensorEntity):
     def extra_state_attributes(self):
         loc = self._loc()
         return {k: loc[k] for k in ("flag", "country", "country_code", "city", "region", "latitude", "longitude", "org")
-                if loc.get(k) is not None} | {"exit_ip": self.tunnel.get("activeIp"), "tunnel_region": self.tunnel.get("regionCode")}
+                if loc.get(k) is not None} | {
+            "exit_ip": self.tunnel.get("activeIp"), "tunnel_region": self.tunnel.get("regionCode"),
+            "city_lookup": "enabled" if getattr(self.coordinator, "geo", None) else "off (Configure the integration to enable)"}
