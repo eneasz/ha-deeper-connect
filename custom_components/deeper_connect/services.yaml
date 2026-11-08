@@ -1,0 +1,17 @@
+set_app_relocation:
+  fields:
+    config_entry:
+      required: false
+      selector:
+        config_entry:
+          integration: deeper_connect
+    app:
+      required: true
+      example: netflix
+      selector:
+        text:
+    tunnel:
+      required: true
+      example: US
+      selector:
+        text:

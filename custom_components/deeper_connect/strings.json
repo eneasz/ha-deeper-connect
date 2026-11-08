@@ -1,13 +1,64 @@
 {
   "config": {
     "step": {
-      "user": {"title": "Deeper Connect", "description": "Address of your Deeper device (34.34.34.34 in router mode, or its LAN/WAN-side IP).",
-               "data": {"host": "Host", "username": "Username", "password": "Password"}},
-      "reauth_confirm": {"title": "Re-authenticate", "description": "The saved password no longer works. Enter the current admin password.",
-                         "data": {"password": "Password"}}
+      "user": {
+        "title": "Deeper Connect",
+        "description": "Address of your Deeper device (34.34.34.34 in router mode, or its LAN/WAN-side IP).",
+        "data": {
+          "host": "Host",
+          "username": "Username",
+          "password": "Password"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate",
+        "description": "The saved password no longer works. Enter the current admin password.",
+        "data": {
+          "password": "Password"
+        }
+      }
     },
-    "error": {"cannot_connect": "Cannot reach the device", "invalid_auth": "Invalid credentials", "unknown": "Unexpected error"},
-    "abort": {"already_configured": "Device already configured", "reauth_successful": "Re-authentication successful"}
+    "error": {
+      "cannot_connect": "Cannot reach the device",
+      "invalid_auth": "Invalid credentials",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "Device already configured",
+      "reauth_successful": "Re-authentication successful"
+    }
   },
-  "options": {"step": {"init": {"title": "Deeper Connect options", "description": "City-level tunnel locations send only the tunnel exit-node IPs to ipinfo.io (fallback: geojs.io). Off by default; country is always shown without any lookup.", "data": {"scan_interval": "Polling interval (seconds)", "geo_lookup": "Look up exit-node city and map position online"}}}}
+  "options": {
+    "step": {
+      "init": {
+        "title": "Deeper Connect options",
+        "description": "City-level tunnel locations send only the tunnel exit-node IPs to ipinfo.io (fallback: geojs.io). Off by default; country is always shown without any lookup. Any app can also be relocated with the deeper_connect.set_app_relocation service.",
+        "data": {
+          "scan_interval": "Polling interval (seconds)",
+          "geo_lookup": "Look up exit-node city and map position online",
+          "apps": "Apps to control (adds a relocation dropdown for each)"
+        }
+      }
+    }
+  },
+  "services": {
+    "set_app_relocation": {
+      "name": "Set app relocation",
+      "description": "Route an app through a tunnel, use direct access, or clear its relocation.",
+      "fields": {
+        "config_entry": {
+          "name": "Device",
+          "description": "Which Deeper device (optional if you only have one)."
+        },
+        "app": {
+          "name": "App",
+          "description": "App key or name as shown in the Deeper UI, e.g. netflix or Disney Plus."
+        },
+        "tunnel": {
+          "name": "Tunnel",
+          "description": "A tunnel code such as US, or 'direct' for direct access, or 'not_set' to clear."
+        }
+      }
+    }
+  }
 }

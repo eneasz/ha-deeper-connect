@@ -20,6 +20,10 @@ class DeeperAuthError(DeeperError):
     """Bad credentials / session expired."""
 
 
+class DeeperRejectedError(DeeperError):
+    """The device answered but refused the request."""
+
+
 class DeeperConnectionError(DeeperError):
     """Device unreachable."""
 
@@ -95,6 +99,22 @@ class DeeperClient:
     async def refresh_tunnel(self, tunnel_code: str) -> Any:
         # Payload assumed from UI code; UNVERIFIED on hardware.
         return await self.post("/api/smartRoute/refreshTunnel", {"tunnelCode": tunnel_code})
+
+    async def apps(self) -> Any:
+        return await self.get("/api/appRelocator/appsData")
+
+    async def set_app_tunnel(self, app: str, tunnel_code: str) -> Any:
+        """Relocate an app. 'ZZ' = not set (delApp), 'LL' = direct access, otherwise a tunnel code.
+
+        Request bodies taken from the device's own web UI.
+        """
+        if tunnel_code == "ZZ":
+            resp = await self.post("/api/appRelocator/delApp", {"appName": app})
+        else:
+            resp = await self.post("/api/appRelocator/addApp", {"appName": app, "tunnelCode": tunnel_code})
+        if isinstance(resp, dict) and resp.get("success") is False:
+            raise DeeperRejectedError(str(resp.get("reason") or "rejected by device"))
+        return resp
 
     async def reboot(self) -> Any:
         return await self.post("/api/admin/reboot")

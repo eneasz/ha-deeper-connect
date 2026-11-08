@@ -11,7 +11,7 @@ def data():
 
 def test_imports():
     import importlib
-    for m in ("api", "coordinator", "config_flow", "sensor", "binary_sensor", "button", "switch", "update", "diagnostics", "device_tracker", "location", "geo"):
+    for m in ("api", "coordinator", "config_flow", "sensor", "binary_sensor", "button", "switch", "update", "diagnostics", "device_tracker", "location", "geo", "select"):
         importlib.import_module(f"deeper_connect.{m}")
 
 
@@ -146,3 +146,83 @@ def test_geo_locator_falls_back_and_caches():
     a, b = asyncio.run(run())
     assert a["country_code"] == "PL" and a is b
     assert len(calls) == 2  # ipinfo failed, geojs ok, second lookup served from cache
+
+
+def test_app_helpers():
+    from deeper_connect.util import (app_title, apps_for_tunnel, code_to_option, find_app, option_to_code,
+                                     relocated_apps)
+    assert app_title("disneyPlus") == "Disney Plus" and app_title("netflix") == "Netflix"
+    assert [code_to_option(c) for c in ("ZZ", "LL", "US", None)] == ["not_set", "direct", "US", "not_set"]
+    assert [option_to_code(o) for o in ("not_set", "Direct", "us", "NONE", " PL ")] == ["ZZ", "LL", "US", "ZZ", "PL"]
+    apps = data()["apps"]
+    assert relocated_apps(apps) == {"netflix": "direct", "hboMax": "PL", "disneyPlus": "US", "plex": "US"}
+    assert apps_for_tunnel(apps, "PL") == ["hboMax"] and apps_for_tunnel(apps, "AU") == []
+    assert find_app(apps, "Disney Plus") == "disneyPlus" and find_app(apps, "NETFLIX") == "netflix"
+    assert find_app(apps, "nope") is None
+
+
+def test_api_app_payloads():
+    import asyncio
+    from deeper_connect.api import DeeperClient, DeeperRejectedError
+
+    calls = []
+
+    class C(DeeperClient):
+        def __init__(self, resp): self.resp = resp
+        async def post(self, path, json=None):
+            calls.append((path, json)); return self.resp
+
+    asyncio.run(C({"success": True}).set_app_tunnel("netflix", "PL"))
+    asyncio.run(C({"success": True}).set_app_tunnel("netflix", "LL"))
+    asyncio.run(C({"success": True}).set_app_tunnel("netflix", "ZZ"))
+    assert calls == [("/api/appRelocator/addApp", {"appName": "netflix", "tunnelCode": "PL"}),
+                     ("/api/appRelocator/addApp", {"appName": "netflix", "tunnelCode": "LL"}),
+                     ("/api/appRelocator/delApp", {"appName": "netflix"})]
+    try:
+        asyncio.run(C({"success": False, "reason": "noTunnelNodes"}).set_app_tunnel("netflix", "PL"))
+        raise AssertionError("should have raised")
+    except DeeperRejectedError as e:
+        assert "noTunnelNodes" in str(e)
+
+
+def test_app_entities_and_service():
+    import asyncio
+    from types import SimpleNamespace
+    import pytest
+    from homeassistant.exceptions import ServiceValidationError
+    import deeper_connect as integ
+    from deeper_connect.select import AppRelocationSelect
+    from deeper_connect.sensor import SENSORS, TunnelApps
+
+    d = data()
+    sent = []
+
+    async def set_tunnel(app, code): sent.append((app, code))
+    coord = SimpleNamespace(data=d, last_update_success=True, async_add_listener=lambda *a, **k: (lambda: None),
+                            config_entry=SimpleNamespace(data={"host": "x"}), async_set_app_tunnel=set_tunnel)
+
+    sel = AppRelocationSelect(coord, "e1", "hboMax")
+    assert sel.current_option == "PL" and sel.options == ["not_set", "direct", "AU", "PL", "US"]
+    assert AppRelocationSelect(coord, "e1", "netflix").current_option == "direct"
+    assert AppRelocationSelect(coord, "e1", "zattoo").current_option == "not_set"
+    assert sel.name == "App Hbo Max relocation" and sel.unique_id == "e1_app_hboMax"
+    asyncio.run(sel.async_select_option("US")); asyncio.run(sel.async_select_option("not_set"))
+    assert sent == [("hboMax", "US"), ("hboMax", "ZZ")]
+
+    relocated = next(s for s in SENSORS if s.key == "relocated_apps")
+    assert relocated.value_fn(d) == 4 and relocated.value_fn({}) is None
+    assert TunnelApps(coord, "e1", "PL").native_value == 1 and TunnelApps(coord, "e1", "AU").native_value == 0
+
+    # service: validation + dispatch
+    handlers = {}
+    hass = SimpleNamespace(services=SimpleNamespace(async_register=lambda dom, name, fn, schema=None: handlers.update({name: fn})),
+                           config_entries=SimpleNamespace(async_entries=lambda dom: [
+                               SimpleNamespace(entry_id="e1", state=SimpleNamespace(value="loaded"), runtime_data=coord)]))
+    asyncio.run(integ.async_setup(hass, {}))
+    call = lambda **kw: SimpleNamespace(data=kw)
+    asyncio.run(handlers["set_app_relocation"](call(app="Disney Plus", tunnel="pl")))
+    asyncio.run(handlers["set_app_relocation"](call(app="netflix", tunnel="direct")))
+    assert sent[-2:] == [("disneyPlus", "PL"), ("netflix", "LL")]
+    for bad in (dict(app="nope", tunnel="US"), dict(app="netflix", tunnel="JP")):
+        with pytest.raises(ServiceValidationError):
+            asyncio.run(handlers["set_app_relocation"](call(**bad)))

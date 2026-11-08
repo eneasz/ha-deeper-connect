@@ -3,10 +3,12 @@ DOMAIN = "deeper_connect"
 DEFAULT_HOST = "34.34.34.34"  # Deeper's default LAN address in router mode
 CONF_SCAN_INTERVAL = "scan_interval"
 CONF_GEO_LOOKUP = "geo_lookup"
+CONF_APPS = "apps"  # app keys that get their own select entity
 DEFAULT_SCAN_INTERVAL = 60
 MIN_SCAN_INTERVAL = 15
+APPS_EVERY = 5  # app-relocation table refreshes every N polls
 SLOW_EVERY = 30  # slow endpoints (versions, settings) refresh every N polls
-PLATFORMS = ["sensor", "binary_sensor", "button", "switch", "update", "device_tracker"]
+PLATFORMS = ["sensor", "binary_sensor", "button", "switch", "update", "device_tracker", "select"]
 # Public key shipped in the device's own web UI (used to encrypt the login password).
 LOGIN_PUBLIC_KEY = """-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxZ9YwQ1CVM4zNHVNPxoD
@@ -20,6 +22,7 @@ FwIDAQAB
 
 # Entity icons for things Home Assistant has no device-class icon for (keyed by description key).
 ICONS = {
+    "relocated_apps": "mdi:application-export",
     "health": "mdi:heart-pulse", "cpu": "mdi:cpu-64-bit", "memory": "mdi:memory",
     "sessions": "mdi:swap-horizontal", "tunnel_sessions": "mdi:tunnel", "clients_online": "mdi:lan-connect",
     "local_upload": "mdi:upload-network", "local_download": "mdi:download-network",
@@ -32,4 +35,4 @@ ICONS = {
     "auto_reboot": "mdi:restart-alert", "sharing": "mdi:share-variant",
     "ads_filter": "mdi:advertisements-off", "ssl_bypass": "mdi:lock-open-variant",
 }
-TUNNEL_ICONS = {"location": "mdi:map-marker", "nodes": "mdi:server-network", "ip": "mdi:ip", "problem": "mdi:tunnel", "refresh": "mdi:refresh-circle"}
+TUNNEL_ICONS = {"apps": "mdi:application-export", "location": "mdi:map-marker", "nodes": "mdi:server-network", "ip": "mdi:ip", "problem": "mdi:tunnel", "refresh": "mdi:refresh-circle"}

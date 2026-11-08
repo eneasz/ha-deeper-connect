@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.0
+- App relocation: `Relocated apps` sensors (device and per tunnel), `deeper_connect.set_app_relocation` service,
+  and optional per-app relocation dropdowns chosen in the integration options.
+
 ## 0.4.1
 - Location sensor now reports whether the city lookup is enabled (`city_lookup` attribute).
 - Releases are published automatically from the matching changelog section when a `v*` tag is pushed.

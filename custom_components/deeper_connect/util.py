@@ -87,3 +87,50 @@ def compute_health(data: dict) -> tuple[str, list[str]]:
     if problems:
         return "problem", problems + warnings
     return ("warning", warnings) if warnings else ("ok", [])
+
+
+# --- app relocation -------------------------------------------------------------------------------
+NOT_SET = "ZZ"  # device code: app is not relocated
+DIRECT = "LL"  # device code: app uses direct access (no tunnel)
+OPT_NOT_SET = "not_set"
+OPT_DIRECT = "direct"
+
+
+def app_title(key: str) -> str:
+    """'disneyPlus' -> 'Disney Plus'."""
+    spaced = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", key)
+    return spaced[:1].upper() + spaced[1:]
+
+
+def code_to_option(code: str | None) -> str:
+    if code in (None, "", NOT_SET):
+        return OPT_NOT_SET
+    return OPT_DIRECT if code == DIRECT else code
+
+
+def option_to_code(option: str) -> str:
+    o = (option or "").strip()
+    if o.lower() in (OPT_NOT_SET, "none", "unset", "off"):
+        return NOT_SET
+    if o.lower() in (OPT_DIRECT, "local"):
+        return DIRECT
+    return o.upper()
+
+
+def relocated_apps(apps: dict) -> dict[str, str]:
+    """App -> tunnel option for every app that has a tunnel (or direct access) configured."""
+    return {k: code_to_option(a.get("tunnel")) for k, a in (apps or {}).items()
+            if a.get("tunnel") not in (None, "", NOT_SET)}
+
+
+def apps_for_tunnel(apps: dict, code: str) -> list[str]:
+    return sorted(k for k, a in (apps or {}).items() if a.get("tunnel") == code)
+
+
+def find_app(apps: dict, name: str) -> str | None:
+    """Case-insensitive match on the app key or its display title."""
+    n = (name or "").strip().lower().replace(" ", "")
+    for k in apps or {}:
+        if k.lower() == n or app_title(k).lower().replace(" ", "") == n:
+            return k
+    return None

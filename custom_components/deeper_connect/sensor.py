@@ -12,7 +12,8 @@ from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfDataRate, Unit
 from .const import ICONS, TUNNEL_ICONS
 from .entity import DeeperEntity, TunnelEntity, add_tunnel_entities
 from .location import tunnel_location
-from .util import avg_last, compute_health, last, parse_size, parse_uptime, to_float
+from .util import (apps_for_tunnel, avg_last, compute_health, last, parse_size, parse_uptime, relocated_apps,
+                   to_float)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -99,6 +100,9 @@ SENSORS: tuple[DeeperSensorDescription, ...] = (
                             attrs_fn=lambda d: {"smart_tunnel": _g(d, "dpn").get("smartTunnel"),
                                                 "full_tunnel": _g(d, "dpn").get("fullTunnel")}),
     DeeperSensorDescription(key="lb_mode", name="Node load-balancing", value_fn=lambda d: _g(d, "lb").get("mode"), **_DIAG),
+    DeeperSensorDescription(key="relocated_apps", name="Relocated apps", state_class=SensorStateClass.MEASUREMENT,
+                            value_fn=lambda d: len(relocated_apps(d.get("apps"))) if d.get("apps") else None,
+                            attrs_fn=lambda d: {"apps": relocated_apps(d.get("apps"))}),
     DeeperSensorDescription(key="tunnel_count", name="Tunnels", state_class=SensorStateClass.MEASUREMENT,
                             value_fn=lambda d: len(d.get("tunnels") or {})),
     # --- versions ---
@@ -112,7 +116,8 @@ async def async_setup_entry(hass, entry, add):
     coordinator = entry.runtime_data
     add([DeeperSensor(coordinator, entry.entry_id, desc) for desc in SENSORS])
     add_tunnel_entities(coordinator, entry.entry_id, add,
-                        lambda c, e, code: [TunnelLocation(c, e, code), TunnelNodes(c, e, code), TunnelIp(c, e, code)])
+                        lambda c, e, code: [TunnelLocation(c, e, code), TunnelNodes(c, e, code), TunnelIp(c, e, code),
+                                           TunnelApps(c, e, code)])
 
 
 class DeeperSensor(DeeperEntity, SensorEntity):
@@ -200,3 +205,27 @@ class TunnelLocation(TunnelEntity, SensorEntity):
                 if loc.get(k) is not None} | {
             "exit_ip": self.tunnel.get("activeIp"), "tunnel_region": self.tunnel.get("regionCode"),
             "city_lookup": "enabled" if getattr(self.coordinator, "geo", None) else "off (Configure the integration to enable)"}
+
+
+class TunnelApps(TunnelEntity, SensorEntity):
+    """How many apps are relocated through this tunnel (and which)."""
+
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, coordinator, entry_id, code):
+        super().__init__(coordinator, entry_id, code)
+        self._attr_unique_id = f"{entry_id}_{code}_apps"
+        self._attr_name = "Relocated apps"
+        self._attr_icon = TUNNEL_ICONS["apps"]
+
+    @property
+    def available(self) -> bool:
+        return super().available and bool(self.coordinator.data.get("apps"))
+
+    @property
+    def native_value(self):
+        return len(apps_for_tunnel(self.coordinator.data.get("apps"), self.code))
+
+    @property
+    def extra_state_attributes(self):
+        return {"apps": apps_for_tunnel(self.coordinator.data.get("apps"), self.code)}

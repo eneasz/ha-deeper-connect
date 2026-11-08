@@ -268,5 +268,140 @@
    }
   ],
   "offline": []
+ },
+ "apps": {
+  "netflix": {
+   "app": "netflix",
+   "index": 6,
+   "rules": [],
+   "recommendedTunnels": [
+    "US",
+    "GB",
+    "CA"
+   ],
+   "defaultTunnel": "US",
+   "website": "https://www.netflix.com/",
+   "lockedTunnels": [],
+   "tunnel": "LL",
+   "inactive": true
+  },
+  "hboMax": {
+   "app": "hboMax",
+   "index": 47,
+   "rules": [],
+   "recommendedTunnels": [
+    "US",
+    "FI",
+    "SI",
+    "MX"
+   ],
+   "defaultTunnel": "US",
+   "website": "https://www.hbomax.com/",
+   "lockedTunnels": [],
+   "tunnel": "PL",
+   "inactive": true
+  },
+  "zattoo": {
+   "app": "zattoo",
+   "index": 10,
+   "rules": [],
+   "recommendedTunnels": [
+    "CH"
+   ],
+   "defaultTunnel": "GB",
+   "website": "https://www.zattoo.com/",
+   "lockedTunnels": [
+    "GB",
+    "CH",
+    "FR",
+    "DE"
+   ],
+   "tunnel": "ZZ",
+   "inactive": true,
+   "tags": [
+    "country/CH"
+   ]
+  },
+  "epic": {
+   "app": "epic",
+   "index": 115,
+   "rules": [],
+   "recommendedTunnels": [
+    "US"
+   ],
+   "defaultTunnel": "ZZ",
+   "website": "https://store.epicgames.com/",
+   "lockedTunnels": [],
+   "tunnel": "ZZ",
+   "inactive": true,
+   "tags": [
+    "country/US"
+   ]
+  },
+  "disneyPlus": {
+   "app": "disneyPlus",
+   "index": 5,
+   "rules": [],
+   "recommendedTunnels": [
+    "US",
+    "GB",
+    "CA"
+   ],
+   "defaultTunnel": "US",
+   "website": "https://www.disneyplus.com/",
+   "lockedTunnels": [],
+   "tunnel": "US",
+   "inactive": true
+  },
+  "bbcIPlayer": {
+   "app": "bbcIPlayer",
+   "index": 15,
+   "rules": [],
+   "recommendedTunnels": [
+    "GB"
+   ],
+   "defaultTunnel": "GB",
+   "website": "https://www.bbc.co.uk/iplayer",
+   "lockedTunnels": [
+    "GB"
+   ],
+   "tunnel": "ZZ",
+   "inactive": true,
+   "tags": [
+    "country/GB"
+   ]
+  },
+  "plex": {
+   "app": "plex",
+   "index": 7,
+   "rules": [],
+   "recommendedTunnels": [
+    "US"
+   ],
+   "defaultTunnel": "US",
+   "website": "https://www.plex.tv/",
+   "lockedTunnels": [],
+   "tunnel": "US",
+   "inactive": true,
+   "tags": [
+    "country/US"
+   ]
+  },
+  "spotify": {
+   "app": "spotify",
+   "index": 67,
+   "rules": [],
+   "recommendedTunnels": [
+    "IN"
+   ],
+   "defaultTunnel": "ZZ",
+   "website": "https://www.spotify.com/",
+   "lockedTunnels": [],
+   "tunnel": "ZZ",
+   "inactive": true,
+   "tags": [
+    "country/SE"
+   ]
+  }
  }
 }
