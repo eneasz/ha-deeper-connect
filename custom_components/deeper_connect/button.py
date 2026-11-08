@@ -1,21 +1,46 @@
 """Buttons."""
-from homeassistant.components.button import ButtonEntity
+from __future__ import annotations
 
-from .const import DOMAIN
-from .entity import TunnelEntity, add_tunnel_entities
+from homeassistant.components.button import ButtonDeviceClass, ButtonEntity
+from homeassistant.exceptions import HomeAssistantError
+
+from .entity import DeeperEntity, TunnelEntity, add_tunnel_entities
+
+
+def _check(resp) -> None:
+    if isinstance(resp, dict) and resp.get("success") is False:
+        raise HomeAssistantError(f"Device rejected the request: {resp.get('reason', 'unknown reason')}")
 
 
 async def async_setup_entry(hass, entry, add):
-    coordinator, _ = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
+    add([RebootButton(coordinator, entry.entry_id)])
     add_tunnel_entities(coordinator, entry.entry_id, add, lambda c, e, code: [RefreshTunnel(c, e, code)])
 
 
 class RefreshTunnel(TunnelEntity, ButtonEntity):
+    """Ask the device to pick a fresh exit node for this tunnel."""
+
     def __init__(self, coordinator, entry_id, code):
         super().__init__(coordinator, entry_id, code)
         self._attr_unique_id = f"{entry_id}_{code}_refresh"
         self._attr_name = f"Refresh tunnel {code}"
 
     async def async_press(self):
-        await self.coordinator.client.refresh_tunnel(self.code)
+        _check(await self.coordinator.client.refresh_tunnel(self.code))
         await self.coordinator.async_request_refresh()
+
+
+class RebootButton(DeeperEntity, ButtonEntity):
+    """Reboot the device. Disabled by default."""
+
+    _attr_name = "Reboot"
+    _attr_device_class = ButtonDeviceClass.RESTART
+    _attr_entity_registry_enabled_default = False
+
+    def __init__(self, coordinator, entry_id):
+        super().__init__(coordinator, entry_id)
+        self._attr_unique_id = f"{entry_id}_reboot"
+
+    async def async_press(self):
+        _check(await self.coordinator.client.reboot())

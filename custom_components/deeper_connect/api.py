@@ -1,6 +1,7 @@
 """Minimal async client for the Deeper Connect web API (reverse engineered)."""
 from __future__ import annotations
 
+import asyncio
 import base64
 from typing import Any
 
@@ -39,6 +40,7 @@ class DeeperClient:
         self._base = f"https://{host}"
         self._user, self._pw = username, password
         self._logged_in = False
+        self._lock = asyncio.Lock()
 
     async def _req(self, method: str, path: str, json: Any = None, retry: bool = True) -> Any:
         try:
@@ -55,6 +57,11 @@ class DeeperClient:
         except aiohttp.ClientError as err:
             raise DeeperConnectionError(str(err)) from err
 
+    async def ensure_login(self) -> None:
+        async with self._lock:
+            if not self._logged_in:
+                await self.login()
+
     async def login(self) -> None:
         try:
             async with self._s.post(self._base + "/api/admin/login", ssl=False,
@@ -68,13 +75,11 @@ class DeeperClient:
         self._logged_in = True
 
     async def get(self, path: str) -> Any:
-        if not self._logged_in:
-            await self.login()
+        await self.ensure_login()
         return await self._req("GET", path)
 
     async def post(self, path: str, json: Any = None) -> Any:
-        if not self._logged_in:
-            await self.login()
+        await self.ensure_login()
         return await self._req("POST", path, json or {})
 
     # --- endpoints (shapes to be confirmed against a real device) ---
@@ -86,11 +91,6 @@ class DeeperClient:
     async def tunnels(self) -> Any:
         return await self.get("/api/smartRoute/listTunnels")
 
-    async def network(self) -> Any:
-        return await self.get("/api/system-info/network-address")
-
-    async def wifi(self) -> Any:
-        return await self.get("/api/wifi/workingInfo")
 
     async def refresh_tunnel(self, tunnel_code: str) -> Any:
         # Payload assumed from UI code; UNVERIFIED on hardware.

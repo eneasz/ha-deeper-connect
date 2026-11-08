@@ -1,8 +1,11 @@
 """Constants for Deeper Connect."""
 DOMAIN = "deeper_connect"
 DEFAULT_HOST = "34.34.34.34"  # Deeper's default LAN address in router mode
+CONF_SCAN_INTERVAL = "scan_interval"
 DEFAULT_SCAN_INTERVAL = 60
-PLATFORMS = ["sensor", "binary_sensor", "button"]
+MIN_SCAN_INTERVAL = 15
+SLOW_EVERY = 30  # slow endpoints (versions, settings) refresh every N polls
+PLATFORMS = ["sensor", "binary_sensor", "button", "switch", "update"]
 # Public key shipped in the device's own web UI (used to encrypt the login password).
 LOGIN_PUBLIC_KEY = """-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxZ9YwQ1CVM4zNHVNPxoD

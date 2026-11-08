@@ -1,13 +1,10 @@
-"""Shared helpers."""
+"""Shared entity bases."""
+from __future__ import annotations
+
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
-
-
-def tunnel_unhealthy(t: dict) -> bool:
-    """A tunnel is unhealthy when it has no active node/IP (observed fields: activeNum, activeIp)."""
-    return not t.get("activeNum") or not t.get("activeIp")
 
 
 class DeeperEntity(CoordinatorEntity):
@@ -16,8 +13,20 @@ class DeeperEntity(CoordinatorEntity):
     def __init__(self, coordinator, entry_id: str) -> None:
         super().__init__(coordinator)
         self._entry_id = entry_id
-        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, entry_id)}, name="Deeper Connect",
-                                            manufacturer="Deeper Network")
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        d = self.coordinator.data or {}
+        hw, dev, sw = d.get("hardware") or {}, d.get("device") or {}, d.get("software") or {}
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._entry_id)},
+            name=f"Deeper {dev.get('deviceName') or 'Connect'}",
+            manufacturer="Deeper Network",
+            model=dev.get("target"),
+            serial_number=hw.get("SN"),
+            sw_version=sw.get("softwareVersion"),
+            configuration_url=f"https://{self.coordinator.config_entry.data['host']}",
+        )
 
 
 class TunnelEntity(DeeperEntity):
@@ -45,4 +54,4 @@ def add_tunnel_entities(coordinator, entry_id, add, factory) -> None:
             add([e for c in new for e in factory(coordinator, entry_id, c)])
 
     _sync()
-    coordinator.async_add_listener(_sync)
+    coordinator.config_entry.async_on_unload(coordinator.async_add_listener(_sync))

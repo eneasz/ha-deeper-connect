@@ -1,1 +1,1 @@
-{ "name": "Deeper Connect", "render_readme": true }
+{ "name": "Deeper Connect", "render_readme": true, "homeassistant": "2025.1.0" }

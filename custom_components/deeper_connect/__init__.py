@@ -1,55 +1,40 @@
 """Deeper Connect integration."""
 from __future__ import annotations
 
-from datetime import timedelta
-import logging
-
 import aiohttp
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME, Platform
+from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import DeeperAuthError, DeeperClient, DeeperError
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, PLATFORMS
+from .api import DeeperClient
+from .const import PLATFORMS
+from .coordinator import DeeperCoordinator
 
-_LOGGER = logging.getLogger(__name__)
-
-
-class DeeperCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, client: DeeperClient) -> None:
-        super().__init__(hass, _LOGGER, name=DOMAIN, config_entry=entry,
-                         update_interval=timedelta(seconds=DEFAULT_SCAN_INTERVAL))
-        self.client = client
-
-    async def _async_update_data(self) -> dict:
-        try:
-            return {
-                "tunnels": {t["tunnelCode"]: t for t in await self.client.tunnels()},
-                "network": await self.client.network(),
-                "wifi": (await self.client.wifi()).get("workingInfo", {}),
-            }
-        except DeeperAuthError as err:
-            raise ConfigEntryAuthFailed from err
-        except DeeperError as err:
-            raise UpdateFailed(str(err)) from err
+type DeeperConfigEntry = ConfigEntry[DeeperCoordinator]
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: DeeperConfigEntry) -> bool:
     # Own session with an unsafe cookie jar: the device is addressed by IP.
     session = aiohttp.ClientSession(cookie_jar=aiohttp.CookieJar(unsafe=True))
     client = DeeperClient(session, entry.data[CONF_HOST], entry.data[CONF_USERNAME], entry.data[CONF_PASSWORD])
-    coordinator = DeeperCoordinator(hass, entry, client)
-    await coordinator.async_config_entry_first_refresh()
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = (coordinator, session)
+    coordinator = DeeperCoordinator(hass, entry, client, session)
+    try:
+        await coordinator.async_config_entry_first_refresh()
+    except Exception:
+        await session.close()
+        raise
+    entry.runtime_data = coordinator
+    entry.async_on_unload(entry.add_update_listener(_reload))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def _reload(hass: HomeAssistant, entry: DeeperConfigEntry) -> None:
+    await hass.config_entries.async_reload(entry.entry_id)
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: DeeperConfigEntry) -> bool:
     ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if ok:
-        _, session = hass.data[DOMAIN].pop(entry.entry_id)
-        await session.close()
+        await entry.runtime_data.session.close()
     return ok

@@ -1,31 +1,74 @@
 """Binary sensors."""
-from homeassistant.components.binary_sensor import BinarySensorDeviceClass, BinarySensorEntity
+from __future__ import annotations
 
-from .const import DOMAIN
-from .entity import DeeperEntity, TunnelEntity, add_tunnel_entities, tunnel_unhealthy
+from collections.abc import Callable
+from dataclasses import dataclass
+
+from homeassistant.components.binary_sensor import (
+    BinarySensorDeviceClass, BinarySensorEntity, BinarySensorEntityDescription)
+from homeassistant.const import EntityCategory
+
+from .entity import DeeperEntity, TunnelEntity, add_tunnel_entities
+from .util import compute_health, tunnel_unhealthy
+
+
+@dataclass(frozen=True, kw_only=True)
+class DeeperBinaryDescription(BinarySensorEntityDescription):
+    is_on_fn: Callable[[dict], bool | None]
+    attrs_fn: Callable[[dict], dict] | None = None
+
+
+def _g(d, k):
+    return d.get(k) or {}
+
+
+_DIAG = dict(entity_category=EntityCategory.DIAGNOSTIC)
+
+BINARY_SENSORS: tuple[DeeperBinaryDescription, ...] = (
+    DeeperBinaryDescription(key="health_problem", name="Health problem", device_class=BinarySensorDeviceClass.PROBLEM,
+                            is_on_fn=lambda d: compute_health(d)[0] == "problem",
+                            attrs_fn=lambda d: {"reasons": compute_health(d)[1]}),
+    DeeperBinaryDescription(key="tunnel_problem", name="Tunnel problem", device_class=BinarySensorDeviceClass.PROBLEM,
+                            is_on_fn=lambda d: any(tunnel_unhealthy(t) for t in (d.get("tunnels") or {}).values()),
+                            attrs_fn=lambda d: {"unhealthy": [c for c, t in (d.get("tunnels") or {}).items() if tunnel_unhealthy(t)]}),
+    DeeperBinaryDescription(key="wan_connected", name="WAN connected", device_class=BinarySensorDeviceClass.CONNECTIVITY,
+                            is_on_fn=lambda d: (_g(d, "wifi").get("wanStatus") == "connected") if _g(d, "wifi") else None),
+    DeeperBinaryDescription(key="auto_update", name="Auto-update", is_on_fn=lambda d: bool(_g(d, "autoupdate").get("autoUpdate"))
+                            if "autoUpdate" in _g(d, "autoupdate") else None, **_DIAG),
+    DeeperBinaryDescription(key="auto_reboot", name="Scheduled reboot", is_on_fn=lambda d: _g(d, "autoreboot").get("on"),
+                            attrs_fn=lambda d: {k: v for k, v in _g(d, "autoreboot").items() if k != "on"}, **_DIAG),
+    DeeperBinaryDescription(key="sharing", name="Bandwidth sharing", is_on_fn=lambda d: _g(d, "sharing").get("sharingEnabled"), **_DIAG),
+)
 
 
 async def async_setup_entry(hass, entry, add):
-    coordinator, _ = hass.data[DOMAIN][entry.entry_id]
-    add([AnyTunnelProblem(coordinator, entry.entry_id)])
+    coordinator = entry.runtime_data
+    add([DeeperBinary(coordinator, entry.entry_id, desc) for desc in BINARY_SENSORS])
     add_tunnel_entities(coordinator, entry.entry_id, add, lambda c, e, code: [TunnelProblem(c, e, code)])
 
 
-class AnyTunnelProblem(DeeperEntity, BinarySensorEntity):
-    _attr_name = "Tunnel problem"
-    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+class DeeperBinary(DeeperEntity, BinarySensorEntity):
+    entity_description: DeeperBinaryDescription
 
-    def __init__(self, coordinator, entry_id):
+    def __init__(self, coordinator, entry_id, description) -> None:
         super().__init__(coordinator, entry_id)
-        self._attr_unique_id = f"{entry_id}_tunnel_problem"
+        self.entity_description = description
+        self._attr_unique_id = f"{entry_id}_{description.key}"
 
     @property
     def is_on(self):
-        return any(tunnel_unhealthy(t) for t in self.coordinator.data["tunnels"].values())
+        try:
+            return self.entity_description.is_on_fn(self.coordinator.data)
+        except (KeyError, TypeError):
+            return None
 
     @property
     def extra_state_attributes(self):
-        return {"unhealthy": [c for c, t in self.coordinator.data["tunnels"].items() if tunnel_unhealthy(t)]}
+        fn = self.entity_description.attrs_fn
+        try:
+            return fn(self.coordinator.data) if fn else None
+        except (KeyError, TypeError):
+            return None
 
 
 class TunnelProblem(TunnelEntity, BinarySensorEntity):

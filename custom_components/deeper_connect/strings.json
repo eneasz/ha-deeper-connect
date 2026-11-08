@@ -1,1 +1,13 @@
-{"config":{"step":{"user":{"title":"Deeper Connect","description":"Address of your Deeper device (default 34.34.34.34 in router mode, or its LAN IP).","data":{"host":"Host","username":"Username","password":"Password"}}},"error":{"cannot_connect":"Cannot reach the device","invalid_auth":"Invalid credentials","unknown":"Unexpected error"},"abort":{"already_configured":"Device already configured"}}}
+{
+  "config": {
+    "step": {
+      "user": {"title": "Deeper Connect", "description": "Address of your Deeper device (34.34.34.34 in router mode, or its LAN/WAN-side IP).",
+               "data": {"host": "Host", "username": "Username", "password": "Password"}},
+      "reauth_confirm": {"title": "Re-authenticate", "description": "The saved password no longer works. Enter the current admin password.",
+                         "data": {"password": "Password"}}
+    },
+    "error": {"cannot_connect": "Cannot reach the device", "invalid_auth": "Invalid credentials", "unknown": "Unexpected error"},
+    "abort": {"already_configured": "Device already configured", "reauth_successful": "Re-authentication successful"}
+  },
+  "options": {"step": {"init": {"title": "Deeper Connect options", "data": {"scan_interval": "Polling interval (seconds)"}}}}
+}
