@@ -1,0 +1,25 @@
+name: Bug report
+description: Something isn't working
+labels: [bug]
+body:
+  - type: input
+    id: ha_version
+    attributes: {label: Home Assistant version, placeholder: "2026.11.0"}
+    validations: {required: true}
+  - type: input
+    id: integration_version
+    attributes: {label: Integration version}
+    validations: {required: true}
+  - type: input
+    id: firmware
+    attributes: {label: Deeper model and firmware, placeholder: "Mini, 2.0.6.h2"}
+    validations: {required: true}
+  - type: textarea
+    id: what
+    attributes: {label: What happened?, description: What did you expect instead?}
+    validations: {required: true}
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics and logs
+      description: Attach the integration's diagnostics download (Devices & services → Deeper Connect → ⋮ → Download diagnostics; IPs, MACs and serials are redacted) and any relevant log lines. Never paste your password.
