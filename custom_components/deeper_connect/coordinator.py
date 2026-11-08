@@ -35,6 +35,7 @@ FAST = {
     "live": "/api/dynamic-data",
     "ads": "/api/tproxy/adsFilter",
     "ssl": "/api/tproxy/sslBypass",
+    "udp": "/api/security/settings/udpServer",
 }
 SLOW = {
     "software": "/api/system-info/software-info",
@@ -59,6 +60,7 @@ class DeeperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._polls = 0
         self._apps: dict[str, Any] = {}
         self._force_apps = True
+        self._force_slow = False
 
     async def _fetch(self, path: str) -> Any:
         try:
@@ -76,10 +78,11 @@ class DeeperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             keys = list(FAST)
             results = await asyncio.gather(*(self._fetch(FAST[k]) for k in keys))
             data: dict[str, Any] = dict(zip(keys, results))
-            if self._polls % SLOW_EVERY == 0 or not self._slow:
+            if self._polls % SLOW_EVERY == 0 or not self._slow or self._force_slow:
                 skeys = list(SLOW)
                 sres = await asyncio.gather(*(self._fetch(SLOW[k]) for k in skeys))
                 self._slow = dict(zip(skeys, sres))
+                self._force_slow = False
             if self._force_apps or self._polls % APPS_EVERY == 0:
                 apps = await self._fetch("/api/appRelocator/appsData")
                 if isinstance(apps, dict) and isinstance(apps.get("apps"), dict):
@@ -106,4 +109,10 @@ class DeeperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Relocate an app, then refresh the app table straight away."""
         await self.client.set_app_tunnel(app, code)
         self._force_apps = True
+        await self.async_request_refresh()
+
+    async def async_control(self, setter, *args) -> None:
+        """Run a client setter, then re-read settings straight away."""
+        await setter(*args)
+        self._force_slow = True
         await self.async_request_refresh()

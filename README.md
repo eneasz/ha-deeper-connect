@@ -24,15 +24,32 @@ and the admin username/password. Reauth and polling interval (default 60 s) are 
 | **Per tunnel** | Each tunnel is its **own sub-device** (e.g. *Tunnel AU (🇦🇺 Australia)*) grouping: location, active nodes, exit IP, problem flag, **Refresh exit node** button and (optional) a map position |
 | **Resources** | CPU, memory, temperature, uptime, sessions (total / tunnel), clients online |
 | **Traffic** | live up/down speed, local/client traffic totals, routed and saved traffic, blocked requests |
-| **Network** | public IP, WAN status, connection mode, routing (DPN) mode, node load-balancing mode |
+| **Network** | public IP, WAN status, connection mode |
 | **Firmware** | `update` entity (installed vs latest; installing is done in the Deeper UI) plus signature versions |
 | **App relocation** | `Relocated apps` sensors (overall, and per tunnel), a **`deeper_connect.set_app_relocation` service**, and optional per-app dropdowns |
-| **Config state** | auto-update, scheduled reboot, bandwidth sharing |
-| **Controls** | Reboot button and Ad filter / SSL bypass switches — **disabled by default** (see below) |
+| **Settings (read-only)** | bandwidth sharing |
+| **Controls** | see *Controls* below |
 
 A tunnel is *unhealthy* when it has no active node or no exit IP. `Health` goes to *problem* for WAN down,
 unhealthy tunnels or temperature ≥ 85 °C, and to *warning* for CPU/memory ≥ 90 % (15-min average), temperature ≥ 75 °C,
 a nearly full session table, or a pending firmware update.
+
+## Controls
+| Entity | What it does | Enabled by default |
+|---|---|---|
+| `switch` YouTube ad blocking, SSL bypass, UDP server, Auto-update | toggle those device settings | yes |
+| `select` Routing mode (smart / full / disabled) | switch the device routing mode | **no** (see note) |
+| `select` Node selection mode (regular / random / domain-aware / round-robin) | how connections spread over a tunnel's nodes | **no** |
+| `switch` Scheduled reboot + `time` Scheduled reboot time | the device's automatic reboot | **no** |
+| `select` per app | app relocation (see below) | yes, for apps you customised |
+| `button` Reboot, Refresh exit node | reboot / pick a new exit node | Reboot: **no** |
+| services `set_routing_mode`, `set_app_relocation` | the same from automations | n/a |
+
+Entities marked "no" are off by default until confirmed on hardware; enable them under the device's entities.
+**Routing mode note:** the device does not report its kill-switch state, so changing the mode from HA sends *kill switch = off*.
+Full mode uses the device's remembered full-mode tunnel; if that isn't one of your tunnels use the `set_routing_mode` service with `tunnel`.
+Bandwidth sharing and WAN access are deliberately **read-only**: opening your connection to other people's traffic or to the
+internet should be a conscious action in the Deeper app.
 
 ## App relocation
 The Deeper can send individual apps (Netflix, BBC iPlayer, ...) through a chosen tunnel. This integration exposes it
@@ -41,8 +58,8 @@ without cluttering HA with 100+ entities:
 - **Sensors:** `Relocated apps` on the device (count + app → tunnel map) and on each tunnel (the apps using it).
 - **Service `deeper_connect.set_app_relocation`:** works for *any* app. `tunnel` is a tunnel code (`US`),
   `direct` (direct access, no tunnel) or `not_set` (clear the relocation). `app` is the key or name shown in the Deeper UI.
-- **Dropdowns (optional):** *Configure → Apps to control* adds a select entity per app you choose
-  (options: `not_set`, `direct`, and your tunnels).
+- **Dropdowns:** a select entity per app (options: `not_set`, `direct`, and your tunnels). Out of the box you get the apps whose
+  tunnel differs from the device default; change the list under *Configure → Apps to control*.
 
 ```yaml
 # Example: send Netflix through the US tunnel in the evening, back to direct access overnight
@@ -73,6 +90,7 @@ The map pins appear as `device_tracker` entities and work with the Map card.
 
 ## Verification status
 Verified on hardware: login, all read-only sensors, per-tunnel refresh.
+The settings controls above use the web UI's own request bodies and are covered by unit tests; those not enabled by default are the ones not yet confirmed on hardware.
 App relocation is verified on hardware: setting an app to a tunnel and clearing it again. Setting `direct` uses the same call and the UI's `LL` code but has not been tried on hardware.
 **Unverified (disabled by default):** Reboot button, Ad filter and SSL bypass switches — request bodies are inferred from the
 web UI. Reports welcome.

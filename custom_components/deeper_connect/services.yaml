@@ -15,3 +15,22 @@ set_app_relocation:
       example: US
       selector:
         text:
+
+set_routing_mode:
+  fields:
+    config_entry:
+      required: false
+      selector:
+        config_entry:
+          integration: deeper_connect
+    mode:
+      required: true
+      example: smart
+      selector:
+        select:
+          options: [smart, full, disabled]
+    tunnel:
+      required: false
+      example: US
+      selector:
+        text:

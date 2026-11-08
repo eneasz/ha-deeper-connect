@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0
+- Controls for device settings: switches (YouTube ad blocking, SSL bypass, UDP server, auto-update, scheduled reboot),
+  selects (routing mode, node selection mode), scheduled-reboot time, and a `set_routing_mode` service.
+- App relocation dropdowns now appear by default for apps whose tunnel differs from the device default.
+- **Changed:** the read-only *Routing mode*, *Node load-balancing*, *Auto-update* and *Scheduled reboot* entities were replaced by
+  the controls above (old entities are removed automatically).
+- **Fixed:** the ad-filter switch now sends the `type: youtube` the device expects.
+
 ## 0.5.0
 - App relocation: `Relocated apps` sensors (device and per tunnel), `deeper_connect.set_app_relocation` service,
   and optional per-app relocation dropdowns chosen in the integration options.

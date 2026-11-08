@@ -38,6 +38,13 @@ def _encrypt(password: str) -> str:
     return base64.b64encode(ct).decode()
 
 
+def _check(resp: Any) -> Any:
+    """Raise if the device answered but refused (it uses success:false, or code != 0 for some calls)."""
+    if isinstance(resp, dict) and (resp.get("success") is False or resp.get("code") not in (None, 0)):
+        raise DeeperRejectedError(str(resp.get("reason") or resp.get("error") or resp.get("message") or "rejected by device"))
+    return resp
+
+
 class DeeperClient:
     def __init__(self, session: aiohttp.ClientSession, host: str, username: str, password: str) -> None:
         self._s = session  # must use a CookieJar(unsafe=True) since host is an IP
@@ -112,9 +119,29 @@ class DeeperClient:
             resp = await self.post("/api/appRelocator/delApp", {"appName": app})
         else:
             resp = await self.post("/api/appRelocator/addApp", {"appName": app, "tunnelCode": tunnel_code})
-        if isinstance(resp, dict) and resp.get("success") is False:
-            raise DeeperRejectedError(str(resp.get("reason") or "rejected by device"))
-        return resp
+        return _check(resp)
+
+    # --- settings (request bodies taken from the device's web UI) ---
+    async def set_dpn_mode(self, body: dict) -> Any:
+        return _check(await self.post("/api/smartRoute/setDpnMode", body))
+
+    async def set_node_lb_mode(self, mode: str) -> Any:
+        return _check(await self.post("/api/smartRoute/nodeLbMode", {"mode": mode}))
+
+    async def set_auto_update(self, on: bool) -> Any:
+        return _check(await self.get(f"/api/system-info/set-autoupdate?autoUpdate={1 if on else 0}"))
+
+    async def set_auto_reboot(self, config: dict) -> Any:
+        return _check(await self.post("/api/autoReboot/config", config))
+
+    async def set_udp_server(self, on: bool) -> Any:
+        return _check(await self.post("/api/security/settings/udpServer", {"enabled": on}))
+
+    async def set_ssl_bypass(self, on: bool) -> Any:
+        return _check(await self.post("/api/tproxy/sslBypass", {"enable": on}))
+
+    async def set_youtube_ads(self, on: bool) -> Any:
+        return _check(await self.post("/api/tproxy/adsFilter", {"enable": on, "type": "youtube"}))
 
     async def reboot(self) -> Any:
         return await self.post("/api/admin/reboot")

@@ -134,3 +134,32 @@ def find_app(apps: dict, name: str) -> str | None:
         if k.lower() == n or app_title(k).lower().replace(" ", "") == n:
             return k
     return None
+
+
+def customised_apps(apps: dict) -> list[str]:
+    """Apps whose tunnel was changed from the device default (the ones a user evidently cares about)."""
+    return sorted(k for k, a in (apps or {}).items()
+                  if a.get("tunnel") not in (None, "", NOT_SET) and a.get("tunnel") != a.get("defaultTunnel"))
+
+
+# --- routing mode -----------------------------------------------------------------------------------
+ROUTING_MODES = ("smart", "full", "disabled")
+
+
+def routing_request(mode: str, tunnel: str | None, dpn: dict | None, tunnels) -> dict:
+    """Body for /api/smartRoute/setDpnMode (shapes taken from the device web UI).
+
+    smart -> tunnelCode 'ZZ'; disabled -> ''; full -> a real tunnel (given, else the remembered full-mode tunnel).
+    The device does not report its kill-switch state, so this always sends killSwitch=False.
+    """
+    m = (mode or "").strip().lower()
+    if m == "smart":
+        return {"dpnMode": "smart", "tunnelCode": NOT_SET, "killSwitch": False}
+    if m == "disabled":
+        return {"dpnMode": "disabled", "tunnelCode": "", "killSwitch": False}
+    if m == "full":
+        code = (tunnel or "").strip().upper() or (dpn or {}).get("fullTunnel") or ""
+        if code not in tunnels:
+            raise ValueError(f"Full mode needs one of your tunnels ({', '.join(sorted(tunnels))}); got '{code or 'none'}'")
+        return {"dpnMode": "full", "tunnelCode": code, "killSwitch": False}
+    raise ValueError(f"Unknown routing mode '{mode}' (use {', '.join(ROUTING_MODES)})")

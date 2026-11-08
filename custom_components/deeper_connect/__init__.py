@@ -8,11 +8,12 @@ from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import entity_registry as er
 
 from .api import DeeperClient, DeeperError
 from .const import DOMAIN, PLATFORMS
 from .coordinator import DeeperCoordinator
-from .util import DIRECT, NOT_SET, find_app, option_to_code
+from .util import DIRECT, NOT_SET, find_app, option_to_code, routing_request
 
 type DeeperConfigEntry = ConfigEntry[DeeperCoordinator]
 
@@ -22,6 +23,25 @@ SET_APP_SCHEMA = vol.Schema({
     vol.Required("app"): cv.string,
     vol.Required("tunnel"): cv.string,
 })
+
+
+SET_ROUTING_SCHEMA = vol.Schema({
+    vol.Optional("config_entry"): cv.string,
+    vol.Required("mode"): cv.string,
+    vol.Optional("tunnel"): cv.string,
+})
+
+# Read-only entities of earlier versions that are now controls (switch/select); removed to avoid duplicates.
+_REPLACED = (("binary_sensor", "auto_update"), ("binary_sensor", "auto_reboot"), ("sensor", "dpn_mode"), ("sensor", "lb_mode"))
+
+
+def _loaded_entry(hass, entry_id=None):
+    entries = [e for e in hass.config_entries.async_entries(DOMAIN) if e.state.value == "loaded"]
+    if entry_id:
+        entries = [e for e in entries if e.entry_id == entry_id]
+    if not entries:
+        raise ServiceValidationError("No loaded Deeper Connect device found")
+    return entries[0]
 
 
 async def async_setup(hass: HomeAssistant, config) -> bool:
@@ -45,7 +65,20 @@ async def async_setup(hass: HomeAssistant, config) -> bool:
         except DeeperError as err:
             raise HomeAssistantError(f"Could not relocate {app}: {err}") from err
 
+    async def set_routing_mode(call: ServiceCall) -> None:
+        coordinator = _loaded_entry(hass, call.data.get("config_entry")).runtime_data
+        try:
+            body = routing_request(call.data["mode"], call.data.get("tunnel"), coordinator.data.get("dpn"),
+                                   coordinator.data["tunnels"])
+        except ValueError as err:
+            raise ServiceValidationError(str(err)) from err
+        try:
+            await coordinator.async_control(coordinator.client.set_dpn_mode, body)
+        except DeeperError as err:
+            raise HomeAssistantError(f"Could not set routing mode: {err}") from err
+
     hass.services.async_register(DOMAIN, "set_app_relocation", set_app_relocation, schema=SET_APP_SCHEMA)
+    hass.services.async_register(DOMAIN, "set_routing_mode", set_routing_mode, schema=SET_ROUTING_SCHEMA)
     return True
 
 
@@ -60,6 +93,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: DeeperConfigEntry) -> bo
         await session.close()
         raise
     entry.runtime_data = coordinator
+    registry = er.async_get(hass)
+    for platform, key in _REPLACED:
+        if entity_id := registry.async_get_entity_id(platform, DOMAIN, f"{entry.entry_id}_{key}"):
+            registry.async_remove(entity_id)
     entry.async_on_unload(entry.add_update_listener(_reload))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True

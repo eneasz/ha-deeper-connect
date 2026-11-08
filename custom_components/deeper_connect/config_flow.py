@@ -9,7 +9,7 @@ from homeassistant.core import callback
 from homeassistant.helpers.selector import (SelectOptionDict, SelectSelector, SelectSelectorConfig,
                                             SelectSelectorMode)
 
-from .util import app_title
+from .util import app_title, customised_apps
 
 from .api import DeeperAuthError, DeeperClient, DeeperConnectionError
 from .const import CONF_APPS, CONF_GEO_LOOKUP, CONF_SCAN_INTERVAL, DEFAULT_HOST, DEFAULT_SCAN_INTERVAL, DOMAIN, MIN_SCAN_INTERVAL
@@ -79,11 +79,12 @@ class DeeperOptionsFlow(OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(data=user_input)
         cur = self.config_entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-        chosen = list(self.config_entry.options.get(CONF_APPS, []))
         known = {}
         coordinator = getattr(self.config_entry, "runtime_data", None)
         if coordinator is not None and coordinator.data:
             known = coordinator.data.get("apps") or {}
+        saved = self.config_entry.options.get(CONF_APPS)
+        chosen = list(saved) if saved is not None else customised_apps(known)
         app_options = [SelectOptionDict(value=k, label=app_title(k)) for k in sorted(known, key=str.lower)]
         app_options += [SelectOptionDict(value=k, label=app_title(k)) for k in chosen if k not in known]
         return self.async_show_form(step_id="init", data_schema=vol.Schema({

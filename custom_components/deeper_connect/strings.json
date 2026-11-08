@@ -59,6 +59,43 @@
           "description": "A tunnel code such as US, or 'direct' for direct access, or 'not_set' to clear."
         }
       }
+    },
+    "set_routing_mode": {
+      "name": "Set routing mode",
+      "description": "Switch between smart route, full tunnel and disabled. The device does not report its kill-switch state, so this sends kill switch = off.",
+      "fields": {
+        "config_entry": {
+          "name": "Device",
+          "description": "Which Deeper device (optional if you only have one)."
+        },
+        "mode": {
+          "name": "Mode",
+          "description": "smart, full or disabled."
+        },
+        "tunnel": {
+          "name": "Tunnel",
+          "description": "Tunnel code for full mode (defaults to the remembered full-mode tunnel)."
+        }
+      }
+    }
+  },
+  "entity": {
+    "select": {
+      "routing_mode": {
+        "state": {
+          "smart": "Smart route",
+          "full": "Full tunnel",
+          "disabled": "Disabled"
+        }
+      },
+      "node_selection": {
+        "state": {
+          "none": "Regular",
+          "random": "Random",
+          "domain": "Domain-aware",
+          "rr": "Round-robin"
+        }
+      }
     }
   }
 }

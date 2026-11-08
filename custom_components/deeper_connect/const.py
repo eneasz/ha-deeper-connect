@@ -8,7 +8,7 @@ DEFAULT_SCAN_INTERVAL = 60
 MIN_SCAN_INTERVAL = 15
 APPS_EVERY = 5  # app-relocation table refreshes every N polls
 SLOW_EVERY = 30  # slow endpoints (versions, settings) refresh every N polls
-PLATFORMS = ["sensor", "binary_sensor", "button", "switch", "update", "device_tracker", "select"]
+PLATFORMS = ["sensor", "binary_sensor", "button", "switch", "update", "device_tracker", "select", "time"]
 # Public key shipped in the device's own web UI (used to encrypt the login password).
 LOGIN_PUBLIC_KEY = """-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxZ9YwQ1CVM4zNHVNPxoD
@@ -33,6 +33,7 @@ ICONS = {
     "app_sig": "mdi:fingerprint", "rule_version": "mdi:format-list-checks", "url_sig": "mdi:link-variant",
     "health_problem": "mdi:heart-broken", "tunnel_problem": "mdi:tunnel", "auto_update": "mdi:update",
     "auto_reboot": "mdi:restart-alert", "sharing": "mdi:share-variant",
-    "ads_filter": "mdi:advertisements-off", "ssl_bypass": "mdi:lock-open-variant",
+    "ads_filter": "mdi:youtube", "ssl_bypass": "mdi:lock-open-variant", "udp_server": "mdi:lan-pending",
+    "routing_mode": "mdi:map-marker-path", "node_selection": "mdi:scale-balance", "reboot_time": "mdi:clock-outline",
 }
 TUNNEL_ICONS = {"apps": "mdi:application-export", "location": "mdi:map-marker", "nodes": "mdi:server-network", "ip": "mdi:ip", "problem": "mdi:tunnel", "refresh": "mdi:refresh-circle"}

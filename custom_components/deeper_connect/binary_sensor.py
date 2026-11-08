@@ -34,10 +34,6 @@ BINARY_SENSORS: tuple[DeeperBinaryDescription, ...] = (
                             attrs_fn=lambda d: {"unhealthy": [c for c, t in (d.get("tunnels") or {}).items() if tunnel_unhealthy(t)]}),
     DeeperBinaryDescription(key="wan_connected", name="WAN connected", device_class=BinarySensorDeviceClass.CONNECTIVITY,
                             is_on_fn=lambda d: (_g(d, "wifi").get("wanStatus") == "connected") if _g(d, "wifi") else None),
-    DeeperBinaryDescription(key="auto_update", name="Auto-update", is_on_fn=lambda d: bool(_g(d, "autoupdate").get("autoUpdate"))
-                            if "autoUpdate" in _g(d, "autoupdate") else None, **_DIAG),
-    DeeperBinaryDescription(key="auto_reboot", name="Scheduled reboot", is_on_fn=lambda d: _g(d, "autoreboot").get("on"),
-                            attrs_fn=lambda d: {k: v for k, v in _g(d, "autoreboot").items() if k != "on"}, **_DIAG),
     DeeperBinaryDescription(key="sharing", name="Bandwidth sharing", is_on_fn=lambda d: _g(d, "sharing").get("sharingEnabled"), **_DIAG),
 )
 

@@ -403,5 +403,8 @@
     "country/SE"
    ]
   }
+ },
+ "udp": {
+  "enabled": false
  }
 }

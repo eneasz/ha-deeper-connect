@@ -11,7 +11,7 @@ def data():
 
 def test_imports():
     import importlib
-    for m in ("api", "coordinator", "config_flow", "sensor", "binary_sensor", "button", "switch", "update", "diagnostics", "device_tracker", "location", "geo", "select"):
+    for m in ("api", "coordinator", "config_flow", "sensor", "binary_sensor", "button", "switch", "update", "diagnostics", "device_tracker", "location", "geo", "select", "time"):
         importlib.import_module(f"deeper_connect.{m}")
 
 
@@ -23,7 +23,6 @@ def test_sensor_values():
     assert vals["temperature"] == 40 and vals["cpu"] is not None
     assert vals["uptime"] > 0 and vals["tunnel_count"] == 3
     assert vals["client_download"] > 0 and vals["public_ip"] and vals["wan_status"] == "connected"
-    assert vals["dpn_mode"] == "smart"
     for s in SENSORS:
         if s.attrs_fn:
             s.attrs_fn(d)
@@ -35,7 +34,6 @@ def test_binary_values():
     d = data()
     vals = {s.key: s.is_on_fn(d) for s in BINARY_SENSORS}
     assert vals["tunnel_problem"] is False and vals["wan_connected"] is True
-    assert vals["auto_reboot"] is True
     for s in BINARY_SENSORS:
         s.is_on_fn({})
 
@@ -53,7 +51,7 @@ def test_entities_instantiate():
     ents = [DeeperSensor(coord, "e1", s) for s in SENSORS] + [DeeperBinary(coord, "e1", b) for b in BINARY_SENSORS]
     ents += [TunnelNodes(coord, "e1", "AU"), TunnelIp(coord, "e1", "PL"), TunnelProblem(coord, "e1", "US"),
              RefreshTunnel(coord, "e1", "AU"), RebootButton(coord, "e1"), FirmwareUpdate(coord, "e1")]
-    ents += [DeeperSwitch(coord, "e1", *s) for s in SWITCHES]
+    ents += [DeeperSwitch(coord, "e1", s) for s in SWITCHES]
     ids = [e.unique_id for e in ents]
     assert len(ids) == len(set(ids)), "duplicate unique ids"
     info = ents[0].device_info
@@ -226,3 +224,107 @@ def test_app_entities_and_service():
     for bad in (dict(app="nope", tunnel="US"), dict(app="netflix", tunnel="JP")):
         with pytest.raises(ServiceValidationError):
             asyncio.run(handlers["set_app_relocation"](call(**bad)))
+
+
+def test_routing_request():
+    import pytest
+    from deeper_connect.util import routing_request
+    dpn = {"dpnMode": "smart", "fullTunnel": "FR"}
+    tunnels = {"AU": {}, "PL": {}, "US": {}}
+    assert routing_request("smart", None, dpn, tunnels) == {"dpnMode": "smart", "tunnelCode": "ZZ", "killSwitch": False}
+    assert routing_request("Disabled", None, dpn, tunnels) == {"dpnMode": "disabled", "tunnelCode": "", "killSwitch": False}
+    assert routing_request("full", "us", dpn, tunnels) == {"dpnMode": "full", "tunnelCode": "US", "killSwitch": False}
+    assert routing_request("full", None, {"fullTunnel": "PL"}, tunnels)["tunnelCode"] == "PL"
+    with pytest.raises(ValueError):  # remembered full tunnel FR is not one of the user's tunnels
+        routing_request("full", None, dpn, tunnels)
+    with pytest.raises(ValueError):
+        routing_request("turbo", None, dpn, tunnels)
+
+
+def test_customised_apps():
+    from deeper_connect.util import customised_apps
+    assert customised_apps(data()["apps"]) == ["hboMax", "netflix"]
+
+
+def test_api_setter_bodies():
+    import asyncio
+    import pytest
+    from deeper_connect.api import DeeperClient, DeeperRejectedError
+
+    calls = []
+
+    class C(DeeperClient):
+        def __init__(self, resp=None): self.resp = resp or {"success": True}
+        async def post(self, path, json=None): calls.append(("POST", path, json)); return self.resp
+        async def get(self, path): calls.append(("GET", path)); return self.resp
+
+    c = C()
+    run = asyncio.run
+    run(c.set_dpn_mode({"dpnMode": "smart", "tunnelCode": "ZZ", "killSwitch": False}))
+    run(c.set_node_lb_mode("rr")); run(c.set_udp_server(True)); run(c.set_ssl_bypass(False))
+    run(c.set_youtube_ads(True)); run(c.set_auto_reboot({"on": True, "hour": 3}))
+    run(C({"code": 0}).set_auto_update(True)); run(C({"code": 0}).set_auto_update(False))
+    assert calls == [
+        ("POST", "/api/smartRoute/setDpnMode", {"dpnMode": "smart", "tunnelCode": "ZZ", "killSwitch": False}),
+        ("POST", "/api/smartRoute/nodeLbMode", {"mode": "rr"}),
+        ("POST", "/api/security/settings/udpServer", {"enabled": True}),
+        ("POST", "/api/tproxy/sslBypass", {"enable": False}),
+        ("POST", "/api/tproxy/adsFilter", {"enable": True, "type": "youtube"}),
+        ("POST", "/api/autoReboot/config", {"on": True, "hour": 3}),
+        ("GET", "/api/system-info/set-autoupdate?autoUpdate=1"),
+        ("GET", "/api/system-info/set-autoupdate?autoUpdate=0"),
+    ]
+    with pytest.raises(DeeperRejectedError):
+        run(C({"code": 1, "message": "nope"}).set_auto_update(True))
+    with pytest.raises(DeeperRejectedError):
+        run(C({"success": False, "reason": "needHttps"}).set_youtube_ads(True))
+
+
+def test_controls():
+    import asyncio
+    from datetime import time
+    from types import SimpleNamespace
+    from deeper_connect.select import NodeSelectionSelect, RoutingModeSelect
+    from deeper_connect.switch import SWITCHES, DeeperSwitch
+    from deeper_connect.time import RebootTime
+
+    d = data()
+    sent = []
+
+    class Client:
+        async def set_dpn_mode(self, b): sent.append(("dpn", b))
+        async def set_node_lb_mode(self, m): sent.append(("lb", m))
+        async def set_auto_reboot(self, c): sent.append(("reboot", c))
+        async def set_auto_update(self, v): sent.append(("autoupdate", v))
+        async def set_ssl_bypass(self, v): sent.append(("ssl", v))
+
+    async def control(setter, *args): await setter(*args)
+    coord = SimpleNamespace(data=d, client=Client(), last_update_success=True, async_control=control,
+                            async_add_listener=lambda *a, **k: (lambda: None), config_entry=SimpleNamespace(data={"host": "x"}))
+    run = asyncio.run
+
+    rm = RoutingModeSelect(coord, "e1")
+    assert rm.current_option == "smart" and rm.options == ["smart", "full", "disabled"]
+    assert rm.entity_registry_enabled_default is False
+    run(rm.async_select_option("disabled"))
+    from homeassistant.exceptions import HomeAssistantError
+    import pytest
+    with pytest.raises(HomeAssistantError):  # remembered full tunnel FR isn't one of the user's tunnels
+        run(rm.async_select_option("full"))
+    lb = NodeSelectionSelect(coord, "e1")
+    assert lb.current_option == "none"; run(lb.async_select_option("rr"))
+
+    sw = {s.key: DeeperSwitch(coord, "e1", s) for s in SWITCHES}
+    assert sw["auto_update"].is_on is True and sw["ssl_bypass"].is_on is False and sw["udp_server"].is_on is False
+    assert sw["auto_reboot"].is_on is True
+    assert [k for k, v in sw.items() if v.entity_registry_enabled_default] == ["ads_filter", "ssl_bypass", "udp_server", "auto_update"]
+    run(sw["auto_update"].async_turn_off()); run(sw["ssl_bypass"].async_turn_on()); run(sw["auto_reboot"].async_turn_off())
+
+    rt = RebootTime(coord, "e1")
+    assert rt.native_value == time(2, 0)
+    run(rt.async_set_value(time(4, 30)))
+    assert sent[0] == ("dpn", {"dpnMode": "disabled", "tunnelCode": "", "killSwitch": False})
+    assert ("lb", "rr") in sent and ("autoupdate", False) in sent and ("ssl", True) in sent
+    reboots = [c for k, c in sent if k == "reboot"]
+    assert reboots[0]["on"] is False and reboots[0]["hour"] == 2          # keeps the rest of the config
+    assert (reboots[1]["hour"], reboots[1]["minute"], reboots[1]["on"]) == (4, 30, True)

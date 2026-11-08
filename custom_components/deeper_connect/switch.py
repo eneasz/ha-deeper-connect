@@ -1,42 +1,73 @@
-"""Switches (EXPERIMENTAL: request bodies inferred from the web UI, disabled by default)."""
+"""Switches for device settings (request bodies taken from the device's web UI)."""
 from __future__ import annotations
 
-from homeassistant.components.switch import SwitchEntity
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
+
+from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.exceptions import HomeAssistantError
 
+from .api import DeeperError
 from .const import ICONS
 from .entity import DeeperEntity
 
-SWITCHES = (
-    ("ads_filter", "Ad filter", "ads", "/api/tproxy/adsFilter"),
-    ("ssl_bypass", "SSL bypass", "ssl", "/api/tproxy/sslBypass"),
+
+@dataclass(frozen=True, kw_only=True)
+class DeeperSwitchDescription(SwitchEntityDescription):
+    is_on_fn: Callable[[dict], bool | None]
+    set_fn: Callable[[Any, bool, dict], Any]  # (client, value, data) -> awaitable
+
+
+def _flag(section: str, field: str):
+    def fn(d: dict):
+        v = (d.get(section) or {}).get(field)
+        return None if v is None else bool(v)
+    return fn
+
+
+def _reboot_cfg(client, on: bool, data: dict):
+    return client.set_auto_reboot({**(data.get("autoreboot") or {}), "on": on})
+
+
+SWITCHES: tuple[DeeperSwitchDescription, ...] = (
+    DeeperSwitchDescription(key="ads_filter", name="YouTube ad blocking", is_on_fn=_flag("ads", "enable"),
+                            set_fn=lambda c, v, d: c.set_youtube_ads(v)),
+    DeeperSwitchDescription(key="ssl_bypass", name="SSL bypass", is_on_fn=_flag("ssl", "enable"),
+                            set_fn=lambda c, v, d: c.set_ssl_bypass(v)),
+    DeeperSwitchDescription(key="udp_server", name="UDP server", is_on_fn=_flag("udp", "enabled"),
+                            set_fn=lambda c, v, d: c.set_udp_server(v)),
+    DeeperSwitchDescription(key="auto_update", name="Auto-update", is_on_fn=_flag("autoupdate", "autoUpdate"),
+                            set_fn=lambda c, v, d: c.set_auto_update(v)),
+    # Request body inferred from the config the device reports: off until verified on hardware.
+    DeeperSwitchDescription(key="auto_reboot", name="Scheduled reboot", is_on_fn=_flag("autoreboot", "on"),
+                            set_fn=_reboot_cfg, entity_registry_enabled_default=False),
 )
 
 
 async def async_setup_entry(hass, entry, add):
-    add([DeeperSwitch(entry.runtime_data, entry.entry_id, *s) for s in SWITCHES])
+    add([DeeperSwitch(entry.runtime_data, entry.entry_id, d) for d in SWITCHES])
 
 
 class DeeperSwitch(DeeperEntity, SwitchEntity):
-    _attr_entity_registry_enabled_default = False
+    entity_description: DeeperSwitchDescription
 
-    def __init__(self, coordinator, entry_id, key, name, data_key, path):
+    def __init__(self, coordinator, entry_id, description) -> None:
         super().__init__(coordinator, entry_id)
-        self._attr_unique_id = f"{entry_id}_{key}"
-        self._attr_name = name
-        self._attr_icon = ICONS.get(key)
-        self._data_key, self._path = data_key, path
+        self.entity_description = description
+        self._attr_unique_id = f"{entry_id}_{description.key}"
+        self._attr_icon = ICONS.get(description.key)
 
     @property
     def is_on(self):
-        v = (self.coordinator.data.get(self._data_key) or {}).get("enable")
-        return None if v is None else bool(v)
+        return self.entity_description.is_on_fn(self.coordinator.data)
 
     async def _set(self, value: bool) -> None:
-        resp = await self.coordinator.client.post(self._path, {"enable": value})
-        if not (isinstance(resp, dict) and resp.get("success")):
-            raise HomeAssistantError(f"Device rejected the change: {resp}")
-        await self.coordinator.async_request_refresh()
+        d = self.entity_description
+        try:
+            await self.coordinator.async_control(lambda: d.set_fn(self.coordinator.client, value, self.coordinator.data))
+        except DeeperError as err:
+            raise HomeAssistantError(f"{d.name}: {err}") from err
 
     async def async_turn_on(self, **kwargs):
         await self._set(True)
