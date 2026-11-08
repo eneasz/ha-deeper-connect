@@ -8,6 +8,7 @@ from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass, BinarySensorEntity, BinarySensorEntityDescription)
 from homeassistant.const import EntityCategory
 
+from .const import ICONS, TUNNEL_ICONS
 from .entity import DeeperEntity, TunnelEntity, add_tunnel_entities
 from .util import compute_health, tunnel_unhealthy
 
@@ -54,6 +55,7 @@ class DeeperBinary(DeeperEntity, BinarySensorEntity):
         super().__init__(coordinator, entry_id)
         self.entity_description = description
         self._attr_unique_id = f"{entry_id}_{description.key}"
+        self._attr_icon = description.icon or ICONS.get(description.key)
 
     @property
     def is_on(self):
@@ -78,6 +80,7 @@ class TunnelProblem(TunnelEntity, BinarySensorEntity):
         super().__init__(coordinator, entry_id, code)
         self._attr_unique_id = f"{entry_id}_{code}_problem"
         self._attr_name = f"Tunnel {code} problem"
+        self._attr_icon = TUNNEL_ICONS["problem"]
 
     @property
     def is_on(self):

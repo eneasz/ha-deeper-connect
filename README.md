@@ -1,11 +1,19 @@
 # Deeper Connect for Home Assistant
 
+[![Open your Home Assistant instance and open this repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=eneasz&repository=ha-deeper-connect&category=integration)
+[![Open your Home Assistant instance and start setting up Deeper Connect.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=deeper_connect)
+[![Validate](https://github.com/eneasz/ha-deeper-connect/actions/workflows/validate.yml/badge.svg)](https://github.com/eneasz/ha-deeper-connect/actions/workflows/validate.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Local-polling integration for **Deeper Connect** devices (developed against a Deeper Connect Mini,
 firmware 2.0.6.h2). No cloud. Monitors the device and its tunnels, and warns you when a tunnel needs maintenance.
 
-## Install
-HACS → Custom repositories → add this repo (category *Integration*) → install → restart HA →
-*Settings → Devices & services → Add integration → Deeper Connect*.
+## Install (two clicks)
+1. Press the **HACS** button above → *Download* → restart Home Assistant.
+   (Or: HACS → ⋮ → Custom repositories → add `https://github.com/eneasz/ha-deeper-connect`, category *Integration*.)
+2. Press the **Add integration** button above (or *Settings → Devices & services → Add integration → Deeper Connect*).
+
+The buttons use [My Home Assistant](https://my.home-assistant.io/); set your instance URL there once if asked.
 Enter the device address (`34.34.34.34` in router mode, otherwise the IP Home Assistant can reach it on)
 and the admin username/password. Reauth and polling interval (default 60 s) are handled in the UI.
 

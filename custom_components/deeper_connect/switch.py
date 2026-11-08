@@ -4,6 +4,7 @@ from __future__ import annotations
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.exceptions import HomeAssistantError
 
+from .const import ICONS
 from .entity import DeeperEntity
 
 SWITCHES = (
@@ -23,6 +24,7 @@ class DeeperSwitch(DeeperEntity, SwitchEntity):
         super().__init__(coordinator, entry_id)
         self._attr_unique_id = f"{entry_id}_{key}"
         self._attr_name = name
+        self._attr_icon = ICONS.get(key)
         self._data_key, self._path = data_key, path
 
     @property

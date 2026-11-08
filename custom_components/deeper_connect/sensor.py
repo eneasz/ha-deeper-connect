@@ -9,6 +9,7 @@ from homeassistant.components.sensor import (
     SensorDeviceClass, SensorEntity, SensorEntityDescription, SensorStateClass)
 from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfDataRate, UnitOfInformation, UnitOfTemperature, UnitOfTime
 
+from .const import ICONS, TUNNEL_ICONS
 from .entity import DeeperEntity, TunnelEntity, add_tunnel_entities
 from .util import avg_last, compute_health, last, parse_size, parse_uptime, to_float
 
@@ -120,6 +121,14 @@ class DeeperSensor(DeeperEntity, SensorEntity):
         super().__init__(coordinator, entry_id)
         self.entity_description = description
         self._attr_unique_id = f"{entry_id}_{description.key}"
+        self._attr_icon = description.icon or ICONS.get(description.key)
+
+    @property
+    def icon(self):
+        if self.entity_description.key == "health":
+            return {"ok": "mdi:heart-pulse", "warning": "mdi:alert-circle-outline", "problem": "mdi:alert-octagon"}.get(
+                self.native_value, "mdi:heart-pulse")
+        return self._attr_icon
 
     @property
     def native_value(self):
@@ -144,6 +153,7 @@ class TunnelNodes(TunnelEntity, SensorEntity):
         super().__init__(coordinator, entry_id, code)
         self._attr_unique_id = f"{entry_id}_{code}_nodes"
         self._attr_name = f"Tunnel {code} active nodes"
+        self._attr_icon = TUNNEL_ICONS["nodes"]
 
     @property
     def native_value(self):
@@ -155,6 +165,7 @@ class TunnelIp(TunnelEntity, SensorEntity):
         super().__init__(coordinator, entry_id, code)
         self._attr_unique_id = f"{entry_id}_{code}_ip"
         self._attr_name = f"Tunnel {code} exit IP"
+        self._attr_icon = TUNNEL_ICONS["ip"]
 
     @property
     def native_value(self):

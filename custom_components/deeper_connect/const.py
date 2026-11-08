@@ -16,3 +16,19 @@ M1V7WIu1I6gw463luLs6NFCdrY/fiXoSrXRf6sOTZClXeRhKjA6c0wLIxizgw6ll
 4EeffYVBQSKlEjJJR2y7cxxbp1XkC19evxe0DYbnsemogDcSkmDCj75hsgwuzoTM
 FwIDAQAB
 -----END PUBLIC KEY-----"""
+
+# Entity icons for things Home Assistant has no device-class icon for (keyed by description key).
+ICONS = {
+    "health": "mdi:heart-pulse", "cpu": "mdi:cpu-64-bit", "memory": "mdi:memory",
+    "sessions": "mdi:swap-horizontal", "tunnel_sessions": "mdi:tunnel", "clients_online": "mdi:lan-connect",
+    "local_upload": "mdi:upload-network", "local_download": "mdi:download-network",
+    "client_upload": "mdi:upload-network-outline", "client_download": "mdi:download-network-outline",
+    "routed_traffic": "mdi:routes", "saved_traffic": "mdi:piggy-bank-outline", "blocked_total": "mdi:shield-check",
+    "public_ip": "mdi:ip-network", "wan_status": "mdi:wan", "connection_mode": "mdi:router-network",
+    "dpn_mode": "mdi:map-marker-path", "lb_mode": "mdi:scale-balance", "tunnel_count": "mdi:tunnel-outline",
+    "app_sig": "mdi:fingerprint", "rule_version": "mdi:format-list-checks", "url_sig": "mdi:link-variant",
+    "health_problem": "mdi:heart-broken", "tunnel_problem": "mdi:tunnel", "auto_update": "mdi:update",
+    "auto_reboot": "mdi:restart-alert", "sharing": "mdi:share-variant",
+    "ads_filter": "mdi:advertisements-off", "ssl_bypass": "mdi:lock-open-variant",
+}
+TUNNEL_ICONS = {"nodes": "mdi:server-network", "ip": "mdi:ip", "problem": "mdi:tunnel", "refresh": "mdi:refresh-circle"}

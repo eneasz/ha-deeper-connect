@@ -4,6 +4,7 @@ from __future__ import annotations
 from homeassistant.components.button import ButtonDeviceClass, ButtonEntity
 from homeassistant.exceptions import HomeAssistantError
 
+from .const import TUNNEL_ICONS
 from .entity import DeeperEntity, TunnelEntity, add_tunnel_entities
 
 
@@ -25,6 +26,7 @@ class RefreshTunnel(TunnelEntity, ButtonEntity):
         super().__init__(coordinator, entry_id, code)
         self._attr_unique_id = f"{entry_id}_{code}_refresh"
         self._attr_name = f"Refresh tunnel {code}"
+        self._attr_icon = TUNNEL_ICONS["refresh"]
 
     async def async_press(self):
         _check(await self.coordinator.client.refresh_tunnel(self.code))

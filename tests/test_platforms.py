@@ -62,3 +62,11 @@ def test_entities_instantiate():
         getattr(e, "native_value", None); getattr(e, "is_on", None)
     fw = next(e for e in ents if isinstance(e, FirmwareUpdate))
     assert (fw.installed_version, fw.latest_version) == ("2.0.6.h2", "2.0.7.h2")
+
+
+def test_every_entity_has_an_icon_or_device_class():
+    from deeper_connect.sensor import SENSORS
+    from deeper_connect.binary_sensor import BINARY_SENSORS
+    from deeper_connect.const import ICONS
+    for s in (*SENSORS, *BINARY_SENSORS):
+        assert s.device_class or s.key in ICONS, f"{s.key} would show a generic icon"
