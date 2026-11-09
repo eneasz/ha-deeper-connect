@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.11.0
+- **Reconfigure** from the integration menu: change host, username or password without removing and re-adding the device. The new address
+  must be the same Deeper device (checked by its device id), and a blank password keeps the saved one.
+- **Discovery by DHCP hostname** (`dcn-mini`): the device is offered to you automatically. A device you already have that moved to a new
+  address gets its address updated instead of a duplicate entry. The saved password is never sent to a discovered address.
+- English and Polish texts for the new screens.
+
 ## 0.10.0
 - **New (opt-in): change a client's routing from HA.** *Configure → Clients to watch → Allow changing client routing* adds a
   `select` per watched client (Smart route, Disabled, Blackhole, or full tunnel through any listed tunnel). Off by default because

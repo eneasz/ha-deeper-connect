@@ -16,6 +16,23 @@
         "data": {
           "password": "Password"
         }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Deeper Connect",
+        "description": "Change how Home Assistant reaches the device. Leave the password empty to keep the saved one. The address must belong to the same Deeper device.",
+        "data": {
+          "host": "Host",
+          "username": "Username",
+          "password": "Password"
+        }
+      },
+      "discovery_confirm": {
+        "title": "Deeper Connect found",
+        "description": "A Deeper device was found at {host}. Enter its admin login to add it. If it is a device you already added that changed address, its address is updated instead.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
       }
     },
     "error": {
@@ -25,8 +42,11 @@
     },
     "abort": {
       "already_configured": "Device already configured",
-      "reauth_successful": "Re-authentication successful"
-    }
+      "reauth_successful": "Re-authentication successful",
+      "wrong_device": "That address belongs to a different Deeper device",
+      "reconfigure_successful": "Reconfiguration successful"
+    },
+    "flow_title": "Deeper {host}"
   },
   "options": {
     "step": {

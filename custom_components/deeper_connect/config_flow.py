@@ -37,6 +37,7 @@ async def _validate(data: dict) -> tuple[str | None, str | None]:
 
 class DeeperConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = CONFIG_VERSION
+    _discovered_host: str = ""
 
     @staticmethod
     @callback
@@ -59,6 +60,59 @@ class DeeperConfigFlow(ConfigFlow, domain=DOMAIN):
             vol.Required(CONF_PASSWORD): str,
         })
         return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
+
+    async def async_step_reconfigure(self, user_input=None):
+        """Change host, username or password of an existing entry (blank password keeps the saved one)."""
+        entry = self._get_reconfigure_entry()
+        errors = {}
+        if user_input:
+            data = {CONF_HOST: user_input[CONF_HOST], CONF_USERNAME: user_input[CONF_USERNAME],
+                    CONF_PASSWORD: user_input.get(CONF_PASSWORD) or entry.data[CONF_PASSWORD]}
+            device_id, err = await _validate(data)
+            if err:
+                errors["base"] = err
+            else:
+                await self.async_set_unique_id(device_id, raise_on_progress=False)
+                if entry.unique_id is None:
+                    return self.async_update_reload_and_abort(entry, unique_id=device_id, data_updates=data)
+                self._abort_if_unique_id_mismatch(reason="wrong_device")  # never repoint an entry at a different Deeper
+                return self.async_update_reload_and_abort(entry, data_updates=data)
+        current = user_input or entry.data
+        schema = vol.Schema({
+            vol.Required(CONF_HOST, default=current.get(CONF_HOST, DEFAULT_HOST)): str,
+            vol.Required(CONF_USERNAME, default=current.get(CONF_USERNAME, "admin")): str,
+            vol.Optional(CONF_PASSWORD): str,
+        })
+        return self.async_show_form(step_id="reconfigure", data_schema=schema, errors=errors)
+
+    async def async_step_dhcp(self, discovery_info):
+        """A device announcing itself as `dcn-mini`. Already-known addresses are ignored; anything else asks for the password."""
+        host = discovery_info.ip
+        if any(e.data.get(CONF_HOST) == host for e in self._async_current_entries()):
+            return self.async_abort(reason="already_configured")
+        self._discovered_host = host
+        self.context["title_placeholders"] = {"host": host}
+        return await self.async_step_discovery_confirm()
+
+    async def async_step_discovery_confirm(self, user_input=None):
+        """Log in to the discovered device. If it is a device we already have (its address changed), just update its host."""
+        host = self._discovered_host
+        errors = {}
+        if user_input:
+            data = {CONF_HOST: host, CONF_USERNAME: user_input[CONF_USERNAME], CONF_PASSWORD: user_input[CONF_PASSWORD]}
+            device_id, err = await _validate(data)
+            if err:
+                errors["base"] = err
+            else:
+                await self.async_set_unique_id(device_id)
+                self._abort_if_unique_id_configured(updates={CONF_HOST: host})
+                return self.async_create_entry(title=f"Deeper {host}", data=data)
+        schema = vol.Schema({
+            vol.Required(CONF_USERNAME, default=(user_input or {}).get(CONF_USERNAME, "admin")): str,
+            vol.Required(CONF_PASSWORD): str,
+        })
+        return self.async_show_form(step_id="discovery_confirm", data_schema=schema, errors=errors,
+                                    description_placeholders={"host": host})
 
     async def async_step_reauth(self, entry_data):
         return await self.async_step_reauth_confirm()

@@ -35,6 +35,13 @@ A tunnel is *unhealthy* when it has no active node or no exit IP. `Health` goes 
 unhealthy tunnels or temperature ≥ 85 °C, and to *warning* for CPU/memory ≥ 90 % (15-min average), temperature ≥ 75 °C,
 a nearly full session table, or a pending firmware update.
 
+## Changing the address or password, and discovery
+- **Reconfigure:** on the integration entry use the three-dot menu → *Reconfigure* to change host, username or password (leave the password
+  empty to keep it). The address must belong to the same Deeper device; otherwise it is refused, so an entry can't end up pointing at another box.
+- **Discovery:** Home Assistant offers the device automatically when it announces itself on the network with the DHCP hostname `dcn-mini`,
+  and asks for the admin login. If it is a device you already added whose address changed, the existing entry's address is updated
+  instead of creating a duplicate. Your saved password is never sent to a newly discovered address; you type it in.
+
 ## Features (keep the entity count down)
 Everything beyond the core health/resources/traffic sensors lives in a feature group you switch on under
 *Configure → Features*. The groups are named after the sections of the Deeper web UI. A disabled group creates no
