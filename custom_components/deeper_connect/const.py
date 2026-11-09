@@ -8,6 +8,7 @@ DEFAULT_SCAN_INTERVAL = 60
 MIN_SCAN_INTERVAL = 15
 CONF_FEATURES = "features"  # optional feature groups the user enabled
 CONF_CLIENTS = "access_clients"  # client MACs that get their own route-mode entities
+CONF_CLIENT_CONTROL = "client_control"  # also give those clients a routing select (a write action; off by default)
 CONFIG_VERSION = 2  # 1 -> 2: feature groups renamed to follow the Deeper UI sections (see features.migrate_features)
 # Feature groups, named after the sections of the Deeper web UI.
 FEATURE_DPN = "dpn"  # DPN: tunnels (sub-devices, refresh, map), routing mode, node selection
@@ -57,7 +58,7 @@ ICONS = {
     "health_problem": "mdi:heart-broken", "tunnel_problem": "mdi:tunnel", "auto_update": "mdi:update",
     "auto_reboot": "mdi:restart-alert", "sharing": "mdi:share-variant",
     "ads_filter": "mdi:youtube", "ssl_bypass": "mdi:lock-open-variant", "udp_server": "mdi:lan-pending",
-    "blackholed_clients": "mdi:cancel", "client_route": "mdi:router-network", "client_blackholed": "mdi:cancel",
+    "blackholed_clients": "mdi:cancel", "client_route": "mdi:router-network", "client_route_select": "mdi:router-wireless-settings", "client_blackholed": "mdi:cancel",
     "routing_mode": "mdi:map-marker-path", "node_selection": "mdi:scale-balance", "reboot_time": "mdi:clock-outline",
 }
 TUNNEL_ICONS = {"apps": "mdi:application-export", "location": "mdi:map-marker", "nodes": "mdi:server-network", "ip": "mdi:ip", "problem": "mdi:tunnel", "refresh": "mdi:refresh-circle"}

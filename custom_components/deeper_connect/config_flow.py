@@ -13,7 +13,7 @@ from .features import enabled_features
 from .util import all_clients, app_title, client_title, customised_apps, pinned_clients
 
 from .api import DeeperAuthError, DeeperClient, DeeperConnectionError
-from .const import (ALL_FEATURES, CONFIG_VERSION, CONF_APPS, CONF_CLIENTS, CONF_FEATURES, CONF_GEO_LOOKUP, CONF_SCAN_INTERVAL, DEFAULT_HOST,
+from .const import (ALL_FEATURES, CONFIG_VERSION, CONF_APPS, CONF_CLIENT_CONTROL, CONF_CLIENTS, CONF_FEATURES, CONF_GEO_LOOKUP, CONF_SCAN_INTERVAL, DEFAULT_HOST,
                     DEFAULT_SCAN_INTERVAL, DOMAIN, FEATURE_ACCESS, FEATURE_APPS, MIN_SCAN_INTERVAL)
 
 
@@ -123,6 +123,7 @@ class DeeperOptionsFlow(OptionsFlow):
     async def async_step_clients(self, user_input=None):
         if user_input is not None:
             self._opts[CONF_CLIENTS] = user_input[CONF_CLIENTS]
+            self._opts[CONF_CLIENT_CONTROL] = user_input.get(CONF_CLIENT_CONTROL, False)
             return await self._next("clients")
         known = all_clients(self._data())
         saved = self.config_entry.options.get(CONF_CLIENTS)
@@ -132,4 +133,5 @@ class DeeperOptionsFlow(OptionsFlow):
         options += [SelectOptionDict(value=m, label=m) for m in chosen if m not in known]
         return self.async_show_form(step_id="clients", data_schema=vol.Schema({
             vol.Optional(CONF_CLIENTS, default=chosen): SelectSelector(SelectSelectorConfig(
-                options=options, multiple=True, mode=SelectSelectorMode.DROPDOWN))}))
+                options=options, multiple=True, mode=SelectSelectorMode.DROPDOWN)),
+            vol.Optional(CONF_CLIENT_CONTROL, default=bool(self.config_entry.options.get(CONF_CLIENT_CONTROL))): bool}))

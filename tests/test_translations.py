@@ -21,8 +21,8 @@ def with_platform(entity, language="en"):
     return _with_platform(entity, language)
 
 
-def all_entities():
-    return collect_entities(ALL, {"geo_lookup": True})
+def all_entities(control=True):
+    return collect_entities(ALL, {"geo_lookup": True, "client_control": control})
 
 
 def test_strings_json_matches_english_translation():
@@ -30,7 +30,7 @@ def test_strings_json_matches_english_translation():
 
 
 def test_english_names_are_identical_to_the_previous_release():
-    ents = all_entities()
+    ents = all_entities(control=False)  # client routing selects are new; everything older must be named as before
     assert {e.unique_id for e in ents} == set(GOLDEN)
     for e in ents:
         assert with_platform(e).name == GOLDEN[e.unique_id], e.unique_id

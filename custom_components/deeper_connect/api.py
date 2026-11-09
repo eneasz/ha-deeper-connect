@@ -143,5 +143,29 @@ class DeeperClient:
     async def set_youtube_ads(self, on: bool) -> Any:
         return _check(await self.post("/api/tproxy/adsFilter", {"enable": on, "type": "youtube"}))
 
+    CLIENT_ROUTE_MODES = ("smart", "full", "disabled", "blackHole")
+
+    async def set_client_route(self, mac: str, mode: str, region_code: str | None = None) -> Any:
+        """Change how one Access Control client is routed.
+
+        The device edits a client with a single call that carries the client's whole record, so the record is
+        re-read just before and sent back with only routeMode (and regionCode for 'full') changed, never rebuilt
+        from older data. Request shape taken from the device's own web UI; UNVERIFIED on hardware until tested.
+        """
+        if mode not in self.CLIENT_ROUTE_MODES:
+            raise DeeperError(f"unknown client route mode {mode!r}")
+        if mode == "full" and not region_code:
+            raise DeeperError("full tunnel needs a tunnel code")
+        listing = await self.get("/api/accessControl/list")
+        mac = mac.lower()
+        record = next((c for state in ("online", "offline") for c in (listing or {}).get(state) or []
+                       if isinstance(c, dict) and str(c.get("mac", "")).lower() == mac), None)
+        if record is None:
+            raise DeeperError(f"client {mac} is not in the device's access list")
+        body = {**record, "routeMode": mode}
+        if mode == "full":
+            body["regionCode"] = region_code
+        return _check(await self.post("/api/accessControl/setOne", body))
+
     async def reboot(self) -> Any:
         return await self.post("/api/admin/reboot")

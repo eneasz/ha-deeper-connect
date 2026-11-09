@@ -12,9 +12,9 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
 from .api import DeeperClient, DeeperError
-from .const import CONF_FEATURES, CONFIG_VERSION, DOMAIN, FEATURE_APPS, FEATURE_DPN, PLATFORMS
+from .const import CONF_CLIENT_CONTROL, CONF_FEATURES, CONFIG_VERSION, DOMAIN, FEATURE_APPS, FEATURE_DPN, PLATFORMS
 from .coordinator import DeeperCoordinator
-from .features import features_owning, migrate_features
+from .features import CLIENT_SELECT_RE, features_owning, migrate_features
 from .util import DIRECT, NOT_SET, find_app, option_to_code, routing_request
 
 type DeeperConfigEntry = ConfigEntry[DeeperCoordinator]
@@ -130,6 +130,8 @@ def _remove_disabled_feature_entities(hass: HomeAssistant, entry: DeeperConfigEn
         needs = features_owning(uid[len(prefix):]) if uid.startswith(prefix) else set()
         if needs and not needs <= features:
             registry.async_remove(ent.entity_id)
+        elif not entry.options.get(CONF_CLIENT_CONTROL) and CLIENT_SELECT_RE.match(uid[len(prefix):]):
+            registry.async_remove(ent.entity_id)  # client routing is opt-in: drop the selects when it is switched off
     devices = dr.async_get(hass)
     for dev in dr.async_entries_for_config_entry(devices, entry.entry_id):
         if (DOMAIN, entry.entry_id) not in dev.identifiers and not er.async_entries_for_device(

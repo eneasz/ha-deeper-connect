@@ -50,7 +50,8 @@
         "title": "Kontrola dostępu",
         "description": "Każdy wybrany klient dostaje czujnik trybu routingu i czujnik problemu „odcięty od sieci”, dzięki czemu możesz otrzymać alert, gdy urządzenie zostanie odcięte. Liczba odciętych klientów zawsze obejmuje wszystkich klientów. Domyślnie wybrani są klienci przypięci w aplikacji Deeper.",
         "data": {
-          "access_clients": "Klienci do obserwowania"
+          "access_clients": "Klienci do obserwowania",
+          "client_control": "Zezwól na zmianę routingu klientów (dodaje listę routingu dla każdego klienta; wybranie „Odcięty od sieci” odcina urządzenie od sieci)"
         }
       }
     }
@@ -76,6 +77,14 @@
       },
       "app_relocation": {
         "name": "Przeniesienie aplikacji {app}"
+      },
+      "client_route_select": {
+        "name": "Klient {client} – routing",
+        "state": {
+          "smart": "Inteligentny routing",
+          "disabled": "Wyłączony",
+          "blackhole": "Odcięty od sieci"
+        }
       }
     },
     "sensor": {

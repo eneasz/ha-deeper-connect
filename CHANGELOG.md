@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.0
+- **New (opt-in): change a client's routing from HA.** *Configure → Clients to watch → Allow changing client routing* adds a
+  `select` per watched client (Smart route, Disabled, Blackhole, or full tunnel through any listed tunnel). Off by default because
+  Blackhole cuts a device off the network; switching it off removes the selects. The write re-reads the client's record from the
+  device just before sending it back with only the route changed. **Not yet verified on hardware.**
+- Polish and English translations for the new option and entity.
+
 ## 0.9.0
 - **Polish translation** (`pl`) for the setup/options screens, services and every entity name and state. Home Assistant picks it
   automatically when its language is Polish; other languages keep using English.

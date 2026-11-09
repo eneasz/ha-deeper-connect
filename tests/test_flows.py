@@ -170,7 +170,14 @@ def test_options_full_walk_apps_then_clients_then_save(monkeypatch):
     res = _step(flow, "clients", {"access_clients": ["aa:bb:cc:00:00:03"]})
     assert res["type"].value == "create_entry"
     assert res["data"] == {"scan_interval": 45, "features": ["app_relocator", "access_control"], "geo_lookup": True,
-                           "apps": ["netflix"], "access_clients": ["aa:bb:cc:00:00:03"]}
+                           "apps": ["netflix"], "access_clients": ["aa:bb:cc:00:00:03"], "client_control": False}
+
+
+def test_options_clients_step_can_turn_on_client_control(monkeypatch):
+    flow = _options_flow(monkeypatch)
+    _step(flow, "init", {"scan_interval": 60, "features": ["access_control"], "geo_lookup": False})
+    res = _step(flow, "clients", {"access_clients": ["aa:bb:cc:00:00:03"], "client_control": True})
+    assert res["data"]["client_control"] is True
 
 
 def test_options_access_control_only_goes_straight_to_clients(monkeypatch):

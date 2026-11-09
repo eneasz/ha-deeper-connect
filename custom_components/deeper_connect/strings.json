@@ -50,7 +50,8 @@
         "title": "Access Control",
         "description": "Each chosen client gets a route-mode sensor and a blackholed problem sensor, so you can alert when a device is cut off. The Blackholed clients count always covers every client. Defaults to the clients pinned in the Deeper app.",
         "data": {
-          "access_clients": "Clients to watch"
+          "access_clients": "Clients to watch",
+          "client_control": "Allow changing client routing (adds a routing dropdown per client; choosing Blackhole cuts that device off the network)"
         }
       }
     }
@@ -114,6 +115,14 @@
       },
       "app_relocation": {
         "name": "App {app} relocation"
+      },
+      "client_route_select": {
+        "name": "Client {client} routing",
+        "state": {
+          "smart": "Smart route",
+          "disabled": "Disabled",
+          "blackhole": "Blackhole (cut off)"
+        }
       }
     },
     "sensor": {

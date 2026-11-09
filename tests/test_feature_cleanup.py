@@ -52,10 +52,10 @@ ENTITIES = [
 DEVICES = {"main": {("deeper_connect", "e1")}, "tun_au": {("deeper_connect", "e1_AU")}, "tun_pl": {("deeper_connect", "e1_PL")}}
 
 
-def _run(monkeypatch, features):
+def _run(monkeypatch, features, options=None, entities=ENTITIES):
     import deeper_connect as pkg
-    reg = _setup(monkeypatch, ENTITIES, DEVICES)
-    entry = SimpleNamespace(entry_id="e1")
+    reg = _setup(monkeypatch, entities, DEVICES)
+    entry = SimpleNamespace(entry_id="e1", options=options or {})
     pkg._remove_disabled_feature_entities(None, entry, frozenset(features))
     return reg
 
@@ -95,5 +95,23 @@ def test_tunnel_device_survives_while_it_still_has_entities(monkeypatch):
 def test_entities_without_our_prefix_are_left_alone(monkeypatch, unique_id):
     import deeper_connect as pkg
     reg = _setup(monkeypatch, [(unique_id, "main")], {"main": {("deeper_connect", "e1")}})
-    pkg._remove_disabled_feature_entities(None, SimpleNamespace(entry_id="e1"), frozenset())
+    pkg._remove_disabled_feature_entities(None, SimpleNamespace(entry_id="e1", options={}), frozenset())
     assert unique_id in reg.uids
+
+
+SELECT = "e1_client_aa:bb:cc:00:00:03_route_select"
+
+
+def test_client_routing_selects_are_removed_when_client_control_is_off(monkeypatch):
+    reg = _run(monkeypatch, ALL, {}, [*ENTITIES, (SELECT, "main")])
+    assert SELECT not in reg.uids and reg.uids == {u for u, _ in ENTITIES}
+
+
+def test_client_routing_selects_are_kept_when_client_control_is_on(monkeypatch):
+    reg = _run(monkeypatch, ALL, {"client_control": True}, [*ENTITIES, (SELECT, "main")])
+    assert SELECT in reg.uids
+
+
+def test_client_routing_selects_go_with_access_control_even_if_control_is_on(monkeypatch):
+    reg = _run(monkeypatch, ("dpn",), {"client_control": True}, [*ENTITIES, (SELECT, "main")])
+    assert SELECT not in reg.uids

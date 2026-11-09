@@ -12,7 +12,8 @@ from ..const import (ALL_FEATURES, CONF_FEATURES, DEFAULT_FEATURES, FEATURE_ACCE
                     FEATURE_DPN, FEATURE_SYSTEM, LEGACY_FEATURES)
 
 _TUNNEL_RE = re.compile(r"^[A-Z0-9]{1,4}_(location|nodes|ip|problem|refresh|tracker|apps)$")  # tunnel codes are upper case
-_CLIENT_RE = re.compile(r"^client_([0-9a-f]{2}:){5}[0-9a-f]{2}_(route|blackholed)$")
+CLIENT_SELECT_RE = re.compile(r"^client_([0-9a-f]{2}:){5}[0-9a-f]{2}_route_select$")
+_CLIENT_RE = re.compile(r"^client_([0-9a-f]{2}:){5}[0-9a-f]{2}_(route|route_select|blackholed)$")
 
 
 @dataclass(frozen=True)
