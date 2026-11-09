@@ -261,13 +261,58 @@
  "clients": {
   "online": [
    {
-    "name": "client1"
+    "createdAt": 1773697695000,
+    "regionCode": null,
+    "httpsFilter": false,
+    "pinned": true,
+    "bypass": [],
+    "bwLimit": 0,
+    "mac": "aa:bb:cc:00:00:01",
+    "name": "wlan0",
+    "routeMode": "smart",
+    "remark": "Streamer",
+    "ip": "192.0.2.16"
    },
    {
-    "name": "client1"
+    "createdAt": 1773697695000,
+    "regionCode": null,
+    "httpsFilter": false,
+    "pinned": false,
+    "bypass": [],
+    "bwLimit": 0,
+    "mac": "aa:bb:cc:00:00:02",
+    "name": "",
+    "routeMode": "disabled",
+    "remark": "",
+    "ip": "192.0.2.89"
    }
   ],
-  "offline": []
+  "offline": [
+   {
+    "createdAt": 1773697695000,
+    "regionCode": null,
+    "httpsFilter": false,
+    "pinned": true,
+    "bypass": [],
+    "bwLimit": 0,
+    "mac": "aa:bb:cc:00:00:03",
+    "name": "",
+    "routeMode": "blackHole",
+    "remark": "Blocked TV"
+   },
+   {
+    "createdAt": 1773697695000,
+    "regionCode": null,
+    "httpsFilter": false,
+    "pinned": false,
+    "bypass": [],
+    "bwLimit": 0,
+    "mac": "aa:bb:cc:00:00:04",
+    "name": "iPad",
+    "routeMode": "smart",
+    "remark": ""
+   }
+  ]
  },
  "apps": {
   "netflix": {

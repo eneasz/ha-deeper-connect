@@ -9,7 +9,7 @@ from homeassistant.components.switch import SwitchEntity, SwitchEntityDescriptio
 from homeassistant.exceptions import HomeAssistantError
 
 from .api import DeeperError
-from .const import ICONS
+from .const import FEATURE_CONTROLS, ICONS
 from .entity import DeeperEntity
 
 
@@ -45,7 +45,8 @@ SWITCHES: tuple[DeeperSwitchDescription, ...] = (
 
 
 async def async_setup_entry(hass, entry, add):
-    add([DeeperSwitch(entry.runtime_data, entry.entry_id, d) for d in SWITCHES])
+    if FEATURE_CONTROLS in entry.runtime_data.features:
+        add([DeeperSwitch(entry.runtime_data, entry.entry_id, d) for d in SWITCHES])
 
 
 class DeeperSwitch(DeeperEntity, SwitchEntity):

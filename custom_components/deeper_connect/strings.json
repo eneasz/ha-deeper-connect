@@ -32,11 +32,25 @@
     "step": {
       "init": {
         "title": "Deeper Connect options",
-        "description": "City-level tunnel locations send only the tunnel exit-node IPs to ipinfo.io (fallback: geojs.io). Off by default; country is always shown without any lookup. Any app can also be relocated with the deeper_connect.set_app_relocation service.",
+        "description": "Turn on only the feature groups you need: each one adds entities and, for some, extra polling. City-level tunnel locations send only the tunnel exit-node IPs to ipinfo.io (fallback: geojs.io); off by default, country is always shown without any lookup.",
         "data": {
           "scan_interval": "Polling interval (seconds)",
-          "geo_lookup": "Look up exit-node city and map position online",
-          "apps": "Apps to control (adds a relocation dropdown for each)"
+          "features": "Features",
+          "geo_lookup": "Look up exit-node city and map position online (needs Tunnels)"
+        }
+      },
+      "apps": {
+        "title": "App relocation",
+        "description": "Each chosen app gets a relocation dropdown. Any app can also be relocated with the deeper_connect.set_app_relocation service.",
+        "data": {
+          "apps": "Apps to control"
+        }
+      },
+      "clients": {
+        "title": "Access control",
+        "description": "Each chosen client gets a route-mode sensor and a blackholed problem sensor, so you can alert when a device is cut off. The Blackholed clients count always covers every client. Defaults to the clients pinned in the Deeper app.",
+        "data": {
+          "access_clients": "Clients to watch"
         }
       }
     }
@@ -95,6 +109,16 @@
           "domain": "Domain-aware",
           "rr": "Round-robin"
         }
+      }
+    }
+  },
+  "selector": {
+    "features": {
+      "options": {
+        "access_control": "Access control: per-client routing, blackhole alerts",
+        "tunnels": "Tunnels: per-tunnel devices, exit nodes, refresh buttons, map",
+        "app_relocation": "App relocation: relocated-apps sensors, app dropdowns",
+        "controls": "Controls: switches, routing/node selects, reboot (and the settings they poll)"
       }
     }
   }

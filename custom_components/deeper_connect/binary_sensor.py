@@ -8,9 +8,9 @@ from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass, BinarySensorEntity, BinarySensorEntityDescription)
 from homeassistant.const import EntityCategory
 
-from .const import ICONS, TUNNEL_ICONS
+from .const import CONF_CLIENTS, FEATURE_ACCESS, FEATURE_TUNNELS, ICONS, TUNNEL_ICONS
 from .entity import DeeperEntity, TunnelEntity, add_tunnel_entities
-from .util import compute_health, tunnel_unhealthy
+from .util import BLACKHOLE, all_clients, client_title, compute_health, pinned_clients, tunnel_unhealthy
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -41,7 +41,13 @@ BINARY_SENSORS: tuple[DeeperBinaryDescription, ...] = (
 async def async_setup_entry(hass, entry, add):
     coordinator = entry.runtime_data
     add([DeeperBinary(coordinator, entry.entry_id, desc) for desc in BINARY_SENSORS])
-    add_tunnel_entities(coordinator, entry.entry_id, add, lambda c, e, code: [TunnelProblem(c, e, code)])
+    if FEATURE_ACCESS in coordinator.features:
+        chosen = entry.options.get(CONF_CLIENTS)
+        if chosen is None:
+            chosen = pinned_clients(coordinator.data)
+        add([ClientBlackholed(coordinator, entry.entry_id, mac) for mac in chosen])
+    if FEATURE_TUNNELS in coordinator.features:
+        add_tunnel_entities(coordinator, entry.entry_id, add, lambda c, e, code: [TunnelProblem(c, e, code)])
 
 
 class DeeperBinary(DeeperEntity, BinarySensorEntity):
@@ -81,3 +87,36 @@ class TunnelProblem(TunnelEntity, BinarySensorEntity):
     @property
     def is_on(self):
         return tunnel_unhealthy(self.tunnel)
+
+
+class ClientBlackholed(DeeperEntity, BinarySensorEntity):
+    """On while the device drops this client's traffic (route mode blackHole). Handy for alerting."""
+
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+
+    def __init__(self, coordinator, entry_id, mac: str) -> None:
+        super().__init__(coordinator, entry_id)
+        self.mac = mac.lower()
+        self._attr_unique_id = f"{entry_id}_client_{self.mac}_blackholed"
+        self._attr_icon = ICONS["client_blackholed"]
+
+    @property
+    def client(self) -> dict:
+        return all_clients(self.coordinator.data).get(self.mac) or {}
+
+    @property
+    def name(self):
+        return f"Client {client_title(self.client) if self.client else self.mac} blackholed"
+
+    @property
+    def available(self) -> bool:
+        return super().available and bool(self.client)
+
+    @property
+    def is_on(self):
+        return self.client.get("routeMode") == BLACKHOLE
+
+    @property
+    def extra_state_attributes(self):
+        c = self.client
+        return {"mac": self.mac, "online": c.get("online"), "route_mode": c.get("routeMode")}

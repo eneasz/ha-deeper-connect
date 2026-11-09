@@ -163,3 +163,31 @@ def routing_request(mode: str, tunnel: str | None, dpn: dict | None, tunnels) ->
             raise ValueError(f"Full mode needs one of your tunnels ({', '.join(sorted(tunnels))}); got '{code or 'none'}'")
         return {"dpnMode": "full", "tunnelCode": code, "killSwitch": False}
     raise ValueError(f"Unknown routing mode '{mode}' (use {', '.join(ROUTING_MODES)})")
+
+
+# --- access list (per-client routing) ------------------------------------------------------------------------------
+BLACKHOLE = "blackHole"  # the device's routeMode for a client whose traffic is dropped
+
+
+def all_clients(data: dict) -> dict[str, dict]:
+    """Every client the device knows (online and offline) keyed by MAC, each with an 'online' flag."""
+    out: dict[str, dict] = {}
+    section = (data or {}).get("clients") or {}
+    for state, online in (("offline", False), ("online", True)):
+        for c in section.get(state) or []:
+            if isinstance(c, dict) and c.get("mac"):
+                out[str(c["mac"]).lower()] = {**c, "online": online}
+    return out
+
+
+def client_title(c: dict) -> str:
+    return c.get("remark") or c.get("name") or str(c.get("mac", "unknown client"))
+
+
+def blackholed_clients(data: dict) -> list[dict]:
+    return [c for c in all_clients(data).values() if c.get("routeMode") == BLACKHOLE]
+
+
+def pinned_clients(data: dict) -> list[str]:
+    """MACs of the clients pinned in the Deeper UI: the default selection for per-client entities."""
+    return [m for m, c in all_clients(data).items() if c.get("pinned")]

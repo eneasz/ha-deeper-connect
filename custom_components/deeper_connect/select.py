@@ -5,7 +5,7 @@ from homeassistant.components.select import SelectEntity
 from homeassistant.exceptions import HomeAssistantError
 
 from .api import DeeperError
-from .const import CONF_APPS, ICONS, TUNNEL_ICONS
+from .const import CONF_APPS, FEATURE_APPS, FEATURE_CONTROLS, ICONS, TUNNEL_ICONS
 from .entity import DeeperEntity
 from .util import (OPT_DIRECT, OPT_NOT_SET, ROUTING_MODES, app_title, code_to_option, customised_apps, option_to_code,
                    routing_request)
@@ -17,8 +17,10 @@ async def async_setup_entry(hass, entry, add):
     chosen = entry.options.get(CONF_APPS)
     if chosen is None:  # never configured: start with the apps whose tunnel differs from the device default
         chosen = customised_apps(known)
-    add([RoutingModeSelect(coordinator, entry.entry_id), NodeSelectionSelect(coordinator, entry.entry_id)])
-    add([AppRelocationSelect(coordinator, entry.entry_id, app) for app in chosen if app in known])
+    if FEATURE_CONTROLS in coordinator.features:
+        add([RoutingModeSelect(coordinator, entry.entry_id), NodeSelectionSelect(coordinator, entry.entry_id)])
+    if FEATURE_APPS in coordinator.features:
+        add([AppRelocationSelect(coordinator, entry.entry_id, app) for app in chosen if app in known])
 
 
 class AppRelocationSelect(DeeperEntity, SelectEntity):

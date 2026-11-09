@@ -14,7 +14,9 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .geo import GeoLocator
 from .api import DeeperAuthError, DeeperClient, DeeperError
-from .const import APPS_EVERY, CONF_GEO_LOOKUP, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN, SLOW_EVERY
+from .const import (APPS_EVERY, CONF_GEO_LOOKUP, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN, FEATURE_APPS,
+                    FEATURE_CONTROLS, FEATURE_TUNNELS, SLOW_EVERY)
+from .features import enabled_features
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,6 +39,8 @@ FAST = {
     "ssl": "/api/tproxy/sslBypass",
     "udp": "/api/security/settings/udpServer",
 }
+CONTROL_FAST = ("ads", "ssl", "udp")  # polled only when the controls feature is on
+CONTROL_SLOW = ("autoreboot",)
 SLOW = {
     "software": "/api/system-info/software-info",
     "latest": "/api/system-info/get-latestversion",
@@ -54,9 +58,10 @@ class DeeperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         super().__init__(hass, _LOGGER, name=DOMAIN, config_entry=entry,
                          update_interval=timedelta(seconds=entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)))
         self.client = client
+        self.features = enabled_features(entry.options)
         self.session = session
         self._slow: dict[str, Any] = {}
-        self.geo = GeoLocator(async_get_clientsession(hass)) if entry.options.get(CONF_GEO_LOOKUP) else None
+        self.geo = GeoLocator(async_get_clientsession(hass)) if entry.options.get(CONF_GEO_LOOKUP) and FEATURE_TUNNELS in self.features else None
         self._polls = 0
         self._apps: dict[str, Any] = {}
         self._force_apps = True
@@ -75,15 +80,15 @@ class DeeperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         try:
             await self.client.ensure_login()
             tunnels = await self.client.tunnels()
-            keys = list(FAST)
+            keys = [k for k in FAST if k not in CONTROL_FAST or FEATURE_CONTROLS in self.features]
             results = await asyncio.gather(*(self._fetch(FAST[k]) for k in keys))
             data: dict[str, Any] = dict(zip(keys, results))
             if self._polls % SLOW_EVERY == 0 or not self._slow or self._force_slow:
-                skeys = list(SLOW)
+                skeys = [k for k in SLOW if k not in CONTROL_SLOW or FEATURE_CONTROLS in self.features]
                 sres = await asyncio.gather(*(self._fetch(SLOW[k]) for k in skeys))
                 self._slow = dict(zip(skeys, sres))
                 self._force_slow = False
-            if self._force_apps or self._polls % APPS_EVERY == 0:
+            if FEATURE_APPS in self.features and (self._force_apps or self._polls % APPS_EVERY == 0):
                 apps = await self._fetch("/api/appRelocator/appsData")
                 if isinstance(apps, dict) and isinstance(apps.get("apps"), dict):
                     self._apps = apps["apps"]

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0
+- **Access list (new, opt-in):** the device's per-client routing (`smart`, `disabled`, `blackHole`, ...) is now visible.
+  A **Blackholed clients** sensor counts clients whose traffic is dropped (attributes: which, and a count per route mode), and every
+  client you pick gets a **route mode** sensor and a **blackholed** problem sensor to alert on. Defaults to the clients pinned in the Deeper app.
+- **Feature flags:** *Configure → Features* switches whole groups on or off: `access_control`, `tunnels`, `app_relocation`, `controls`.
+  A disabled group creates no entities and its endpoints are no longer polled (controls: ad/SSL/UDP/reboot-schedule settings;
+  app relocation: the app table). Existing installs keep tunnels, app relocation and controls on; access control is off until enabled.
+  Entities (and tunnel sub-devices) of a group you turn off are removed automatically.
+- The options flow is now multi-step: general options, then app and client pickers for the features that are enabled.
+
 ## 0.6.0
 - Controls for device settings: switches (YouTube ad blocking, SSL bypass, UDP server, auto-update, scheduled reboot),
   selects (routing mode, node selection mode), scheduled-reboot time, and a `set_routing_mode` service.

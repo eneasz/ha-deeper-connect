@@ -7,12 +7,13 @@ from homeassistant.components.time import TimeEntity
 from homeassistant.exceptions import HomeAssistantError
 
 from .api import DeeperError
-from .const import ICONS
+from .const import FEATURE_CONTROLS, ICONS
 from .entity import DeeperEntity
 
 
 async def async_setup_entry(hass, entry, add):
-    add([RebootTime(entry.runtime_data, entry.entry_id)])
+    if FEATURE_CONTROLS in entry.runtime_data.features:
+        add([RebootTime(entry.runtime_data, entry.entry_id)])
 
 
 class RebootTime(DeeperEntity, TimeEntity):

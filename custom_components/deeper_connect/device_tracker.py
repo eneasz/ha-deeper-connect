@@ -3,13 +3,13 @@ from __future__ import annotations
 
 from homeassistant.components.device_tracker import SourceType, TrackerEntity
 
-from .const import CONF_GEO_LOOKUP, TUNNEL_ICONS
+from .const import CONF_GEO_LOOKUP, FEATURE_TUNNELS, TUNNEL_ICONS
 from .entity import TunnelEntity, add_tunnel_entities
 from .location import tunnel_location
 
 
 async def async_setup_entry(hass, entry, add):
-    if not entry.options.get(CONF_GEO_LOOKUP):
+    if not entry.options.get(CONF_GEO_LOOKUP) or FEATURE_TUNNELS not in entry.runtime_data.features:
         return
     add_tunnel_entities(entry.runtime_data, entry.entry_id, add, lambda c, e, code: [TunnelTracker(c, e, code)])
 

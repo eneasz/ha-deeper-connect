@@ -11,7 +11,7 @@ def data():
 
 def test_imports():
     import importlib
-    for m in ("api", "coordinator", "config_flow", "sensor", "binary_sensor", "button", "switch", "update", "diagnostics", "device_tracker", "location", "geo", "select", "time"):
+    for m in ("api", "coordinator", "config_flow", "sensor", "binary_sensor", "button", "switch", "update", "diagnostics", "device_tracker", "location", "geo", "select", "time", "features"):
         importlib.import_module(f"deeper_connect.{m}")
 
 
@@ -197,7 +197,8 @@ def test_app_entities_and_service():
 
     async def set_tunnel(app, code): sent.append((app, code))
     coord = SimpleNamespace(data=d, last_update_success=True, async_add_listener=lambda *a, **k: (lambda: None),
-                            config_entry=SimpleNamespace(data={"host": "x"}), async_set_app_tunnel=set_tunnel)
+                            config_entry=SimpleNamespace(data={"host": "x"}), async_set_app_tunnel=set_tunnel,
+                            features=frozenset({"app_relocation"}))
 
     sel = AppRelocationSelect(coord, "e1", "hboMax")
     assert sel.current_option == "PL" and sel.options == ["not_set", "direct", "AU", "PL", "US"]

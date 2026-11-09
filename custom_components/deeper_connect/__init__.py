@@ -8,11 +8,13 @@ from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
 from .api import DeeperClient, DeeperError
-from .const import DOMAIN, PLATFORMS
+from .const import DOMAIN, FEATURE_APPS, PLATFORMS
 from .coordinator import DeeperCoordinator
+from .features import features_owning
 from .util import DIRECT, NOT_SET, find_app, option_to_code, routing_request
 
 type DeeperConfigEntry = ConfigEntry[DeeperCoordinator]
@@ -52,6 +54,8 @@ async def async_setup(hass: HomeAssistant, config) -> bool:
         if not entries:
             raise ServiceValidationError("No loaded Deeper Connect device found")
         coordinator = entries[0].runtime_data
+        if FEATURE_APPS not in coordinator.features:
+            raise ServiceValidationError("Enable the 'App relocation' feature in the integration options first")
         apps = coordinator.data.get("apps") or {}
         app = find_app(apps, call.data["app"])
         if app is None:
@@ -97,9 +101,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: DeeperConfigEntry) -> bo
     for platform, key in _REPLACED:
         if entity_id := registry.async_get_entity_id(platform, DOMAIN, f"{entry.entry_id}_{key}"):
             registry.async_remove(entity_id)
+    _remove_disabled_feature_entities(hass, entry, coordinator.features)
     entry.async_on_unload(entry.add_update_listener(_reload))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
+
+
+def _remove_disabled_feature_entities(hass: HomeAssistant, entry: DeeperConfigEntry, features) -> None:
+    """Drop registry entries (and emptied tunnel sub-devices) belonging to feature groups that are switched off."""
+    registry = er.async_get(hass)
+    prefix = f"{entry.entry_id}_"
+    for ent in er.async_entries_for_config_entry(registry, entry.entry_id):
+        uid = ent.unique_id
+        needs = features_owning(uid[len(prefix):]) if uid.startswith(prefix) else set()
+        if needs and not needs <= features:
+            registry.async_remove(ent.entity_id)
+    devices = dr.async_get(hass)
+    for dev in dr.async_entries_for_config_entry(devices, entry.entry_id):
+        if (DOMAIN, entry.entry_id) not in dev.identifiers and not er.async_entries_for_device(
+                registry, dev.id, include_disabled_entities=True):
+            devices.async_remove_device(dev.id)
 
 
 async def _reload(hass: HomeAssistant, entry: DeeperConfigEntry) -> None:

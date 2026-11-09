@@ -27,12 +27,48 @@ and the admin username/password. Reauth and polling interval (default 60 s) are 
 | **Network** | public IP, WAN status, connection mode |
 | **Firmware** | `update` entity (installed vs latest; installing is done in the Deeper UI) plus signature versions |
 | **App relocation** | `Relocated apps` sensors (overall, and per tunnel), a **`deeper_connect.set_app_relocation` service**, and optional per-app dropdowns |
+| **Access list** | opt-in: `Blackholed clients` count plus a route-mode and a *blackholed* problem sensor per chosen client |
 | **Settings (read-only)** | bandwidth sharing |
 | **Controls** | see *Controls* below |
 
 A tunnel is *unhealthy* when it has no active node or no exit IP. `Health` goes to *problem* for WAN down,
 unhealthy tunnels or temperature ≥ 85 °C, and to *warning* for CPU/memory ≥ 90 % (15-min average), temperature ≥ 75 °C,
 a nearly full session table, or a pending firmware update.
+
+## Features (keep the entity count down)
+Everything beyond the core health/resources/traffic sensors lives in a feature group you switch on under
+*Configure → Features*. A disabled group creates no entities and its API calls are not made.
+
+| Feature | Adds | Default |
+|---|---|---|
+| `access_control` | Blackholed-clients sensor, per-client route mode + blackholed sensors | **off** |
+| `tunnels` | per-tunnel sub-devices (location, nodes, exit IP, problem, refresh button, map) | on |
+| `app_relocation` | relocated-apps sensors, app dropdowns, the app table polling | on |
+| `controls` | switches, routing/node selects, scheduled reboot, Reboot button, the settings they read | on |
+
+Turning a group off removes its entities from the registry. Tunnel health still feeds `Health` and `Tunnel problem` either way.
+
+## Access list
+The Deeper routes every client in one of several modes: `smart`, `disabled` (direct), a full-tunnel region, or `blackHole`
+(all its traffic is dropped). A device ending up blackholed looks exactly like a dead network from the client's side, so this
+makes it visible to HA:
+
+- `sensor` **Blackholed clients**: how many clients are blackholed (online or not); attributes list them and count clients per mode.
+- Per chosen client (*Configure → Clients to watch*, default: the clients pinned in the Deeper app):
+  `sensor` **Client X route mode** and `binary_sensor` **Client X blackholed** (problem class).
+
+```yaml
+automation:
+  - alias: Deeper blackholed a client
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.deeper_connect_blackholed_clients
+        above: 0
+    action:
+      - service: notify.notify
+        data: {message: "Blackholed on the Deeper: {{ state_attr('sensor.deeper_connect_blackholed_clients', 'clients') | join(', ') }}"}
+```
+This is read-only: changing a client's route mode is done in the Deeper app. Entity ids depend on your device name.
 
 ## Controls
 | Entity | What it does | Enabled by default |

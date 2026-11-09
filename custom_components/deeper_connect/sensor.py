@@ -1,6 +1,7 @@
 """Sensors."""
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -9,11 +10,11 @@ from homeassistant.components.sensor import (
     SensorDeviceClass, SensorEntity, SensorEntityDescription, SensorStateClass)
 from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfDataRate, UnitOfInformation, UnitOfTemperature, UnitOfTime
 
-from .const import ICONS, TUNNEL_ICONS
+from .const import CONF_CLIENTS, FEATURE_ACCESS, FEATURE_APPS, FEATURE_TUNNELS, ICONS, TUNNEL_ICONS
 from .entity import DeeperEntity, TunnelEntity, add_tunnel_entities
 from .location import tunnel_location
-from .util import (apps_for_tunnel, avg_last, compute_health, last, parse_size, parse_uptime, relocated_apps,
-                   to_float)
+from .util import (all_clients, apps_for_tunnel, avg_last, blackholed_clients, client_title, compute_health, last,
+                   parse_size, parse_uptime, pinned_clients, relocated_apps, to_float)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -108,12 +109,28 @@ SENSORS: tuple[DeeperSensorDescription, ...] = (
 )
 
 
+BLACKHOLED_CLIENTS = DeeperSensorDescription(
+    key="blackholed_clients", name="Blackholed clients", state_class=SensorStateClass.MEASUREMENT,
+    value_fn=lambda d: len(blackholed_clients(d)) if d.get("clients") else None,
+    attrs_fn=lambda d: {"clients": [client_title(c) for c in blackholed_clients(d)],
+                        "route_modes": dict(Counter(c.get("routeMode") or "unknown" for c in all_clients(d).values()))})
+
+
 async def async_setup_entry(hass, entry, add):
     coordinator = entry.runtime_data
-    add([DeeperSensor(coordinator, entry.entry_id, desc) for desc in SENSORS])
-    add_tunnel_entities(coordinator, entry.entry_id, add,
-                        lambda c, e, code: [TunnelLocation(c, e, code), TunnelNodes(c, e, code), TunnelIp(c, e, code),
-                                           TunnelApps(c, e, code)])
+    feats = coordinator.features
+    descs = [d for d in SENSORS if d.key != "relocated_apps" or FEATURE_APPS in feats]
+    add([DeeperSensor(coordinator, entry.entry_id, desc) for desc in descs])
+    if FEATURE_ACCESS in feats:
+        add([DeeperSensor(coordinator, entry.entry_id, BLACKHOLED_CLIENTS)])
+        chosen = entry.options.get(CONF_CLIENTS)
+        if chosen is None:  # never configured: follow the clients pinned in the Deeper UI
+            chosen = pinned_clients(coordinator.data)
+        add([ClientRouteMode(coordinator, entry.entry_id, mac) for mac in chosen])
+    if FEATURE_TUNNELS in feats:
+        add_tunnel_entities(coordinator, entry.entry_id, add,
+                            lambda c, e, code: [TunnelLocation(c, e, code), TunnelNodes(c, e, code), TunnelIp(c, e, code)]
+                            + ([TunnelApps(c, e, code)] if FEATURE_APPS in feats else []))
 
 
 class DeeperSensor(DeeperEntity, SensorEntity):
@@ -225,3 +242,39 @@ class TunnelApps(TunnelEntity, SensorEntity):
     @property
     def extra_state_attributes(self):
         return {"apps": apps_for_tunnel(self.coordinator.data.get("apps"), self.code)}
+
+
+class ClientRouteMode(DeeperEntity, SensorEntity):
+    """How the device routes one client: smart, disabled (direct), blackHole (dropped), ...
+
+    Alert on this changing to `blackHole` to find out when a device was cut off.
+    """
+
+    def __init__(self, coordinator, entry_id, mac: str) -> None:
+        super().__init__(coordinator, entry_id)
+        self.mac = mac.lower()
+        self._attr_unique_id = f"{entry_id}_client_{self.mac}_route"
+        self._attr_icon = ICONS["client_route"]
+
+    @property
+    def client(self) -> dict:
+        return all_clients(self.coordinator.data).get(self.mac) or {}
+
+    @property
+    def name(self):
+        return f"Client {client_title(self.client) if self.client else self.mac} route mode"
+
+    @property
+    def available(self) -> bool:
+        return super().available and bool(self.client)
+
+    @property
+    def native_value(self):
+        return self.client.get("routeMode")
+
+    @property
+    def extra_state_attributes(self):
+        c = self.client
+        return {"mac": self.mac, "online": c.get("online"), "ip": c.get("ip"), "device_name": c.get("name") or None,
+                "remark": c.get("remark") or None, "region": c.get("regionCode"), "https_filter": c.get("httpsFilter"),
+                "bandwidth_limit": c.get("bwLimit")}

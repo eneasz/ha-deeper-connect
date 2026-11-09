@@ -6,6 +6,15 @@ CONF_GEO_LOOKUP = "geo_lookup"
 CONF_APPS = "apps"  # app keys that get their own select entity
 DEFAULT_SCAN_INTERVAL = 60
 MIN_SCAN_INTERVAL = 15
+CONF_FEATURES = "features"  # optional feature groups the user enabled
+CONF_CLIENTS = "access_clients"  # client MACs that get their own route-mode entities
+FEATURE_ACCESS = "access_control"  # per-client routing (smart / direct / blackhole ...) visibility
+FEATURE_TUNNELS = "tunnels"  # per-tunnel sub-devices, refresh buttons, map positions
+FEATURE_APPS = "app_relocation"  # app relocation sensors, selects and polling
+FEATURE_CONTROLS = "controls"  # switches / selects / reboot controls and the settings they poll
+ALL_FEATURES = (FEATURE_ACCESS, FEATURE_TUNNELS, FEATURE_APPS, FEATURE_CONTROLS)
+# Features that were always on before flags existed stay on for entries that never saved the option.
+DEFAULT_FEATURES = (FEATURE_TUNNELS, FEATURE_APPS, FEATURE_CONTROLS)
 APPS_EVERY = 5  # app-relocation table refreshes every N polls
 SLOW_EVERY = 30  # slow endpoints (versions, settings) refresh every N polls
 PLATFORMS = ["sensor", "binary_sensor", "button", "switch", "update", "device_tracker", "select", "time"]
@@ -34,6 +43,7 @@ ICONS = {
     "health_problem": "mdi:heart-broken", "tunnel_problem": "mdi:tunnel", "auto_update": "mdi:update",
     "auto_reboot": "mdi:restart-alert", "sharing": "mdi:share-variant",
     "ads_filter": "mdi:youtube", "ssl_bypass": "mdi:lock-open-variant", "udp_server": "mdi:lan-pending",
+    "blackholed_clients": "mdi:cancel", "client_route": "mdi:router-network", "client_blackholed": "mdi:cancel",
     "routing_mode": "mdi:map-marker-path", "node_selection": "mdi:scale-balance", "reboot_time": "mdi:clock-outline",
 }
 TUNNEL_ICONS = {"apps": "mdi:application-export", "location": "mdi:map-marker", "nodes": "mdi:server-network", "ip": "mdi:ip", "problem": "mdi:tunnel", "refresh": "mdi:refresh-circle"}

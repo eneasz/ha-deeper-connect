@@ -4,7 +4,7 @@ from __future__ import annotations
 from homeassistant.components.button import ButtonDeviceClass, ButtonEntity
 from homeassistant.exceptions import HomeAssistantError
 
-from .const import TUNNEL_ICONS
+from .const import FEATURE_CONTROLS, FEATURE_TUNNELS, TUNNEL_ICONS
 from .entity import DeeperEntity, TunnelEntity, add_tunnel_entities
 
 
@@ -15,8 +15,10 @@ def _check(resp) -> None:
 
 async def async_setup_entry(hass, entry, add):
     coordinator = entry.runtime_data
-    add([RebootButton(coordinator, entry.entry_id)])
-    add_tunnel_entities(coordinator, entry.entry_id, add, lambda c, e, code: [RefreshTunnel(c, e, code)])
+    if FEATURE_CONTROLS in coordinator.features:
+        add([RebootButton(coordinator, entry.entry_id)])
+    if FEATURE_TUNNELS in coordinator.features:
+        add_tunnel_entities(coordinator, entry.entry_id, add, lambda c, e, code: [RefreshTunnel(c, e, code)])
 
 
 class RefreshTunnel(TunnelEntity, ButtonEntity):
