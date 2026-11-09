@@ -156,13 +156,27 @@ the device answers again. A wrong password uses Home Assistant's own re-authenti
 update entity, so neither is duplicated as a repair.
 
 ## Verification status
-Verified on hardware: login, all read-only sensors, per-tunnel refresh.
-The settings controls use the web UI's own request bodies; the device accepted each of them (ad blocking, SSL bypass, UDP, auto-update, node selection, reboot schedule)
-when the current value was re-sent. Changing routing mode and rebooting have not been exercised on hardware.
-App relocation is verified on hardware: setting an app to a tunnel and clearing it again. Setting `direct` uses the same call and the UI's `LL` code but has not been tried on hardware.
-Changing a client's routing (opt-in, see Access list): the device accepted the `accessControl/setOne` call when a client's current route was re-sent unchanged (record identical afterwards, other clients untouched). **Unverified:** actually changing a client to another mode.
-**Unverified (disabled by default):** Reboot button, Ad filter and SSL bypass switches — request bodies are inferred from the
-web UI. Reports welcome.
+What has actually been exercised, as of v0.12.0, on a Deeper Connect Mini (firmware 2.0.6.h2) and a real Home Assistant. "No-op re-send" means the
+current value was sent back unchanged: it proves the request shape is accepted, not that a different value behaves as hoped.
+
+| Area | Proven on hardware | Only tested against the anonymised fixture / stubs |
+|---|---|---|
+| Login, all read-only sensors, tunnels, health | Yes | |
+| Tunnel refresh button | Yes | |
+| App relocation (set to a tunnel, clear) | Yes | Setting `direct` (UI's `LL` code) |
+| Routing mode, node selection, reboot schedule, auto-update, UDP server | Accepted as no-op re-send | Switching to a *different* routing mode |
+| Ad filter and SSL bypass switches | Accepted as no-op re-send | Real on/off change |
+| Client routing select (opt-in) | Accepted as no-op re-send of one client's route; the record was identical afterwards and 17 other clients were untouched | Switching a client to full tunnel or blackhole |
+| **Reboot** button (off by default) | | Everything: the request body is inferred from the web UI |
+| Reconfigure flow | Form opens in HA with the current host and username | Saving a change, and the wrong-device refusal |
+| DHCP discovery (`dcn-mini`) | Matcher accepted by hassfest | Discovery of a new or moved device |
+| Repairs: device unreachable | | Yes (timer, once-only raise, cleanup on recovery) |
+| Polling tiers and per-endpoint staleness | 12 requests per steady poll vs 18 before; all sections populated, read-only | Failure and recovery behaviour |
+| Config-entry migration from 0.7.x | Yes (entities decreased as expected, then restored) | |
+| Translations (English, Polish) | | Key and placeholder parity tests only |
+
+Not built, on purpose: earnings (the device returns 403, and there is no credits endpoint) and a monthly sharing-traffic sensor (the device reports
+a `monthly` number with no known unit, and a guessed unit would show wrong data). Reports and anonymised captures are welcome.
 
 Unofficial; not affiliated with Deeper Network. The device API is undocumented and may change between firmware versions.
 
