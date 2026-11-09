@@ -1,7 +1,11 @@
 """Shared-traffic sensors read the device's serverTraffic block (traffic from other users through this device)."""
+import pathlib
+import sys
+
 import pytest
 
-from custom_components.deeper_connect.sensor import CORE_SENSORS
+sys.path.insert(0, str(pathlib.Path(__file__).parent.parent / "custom_components"))
+from deeper_connect.sensor import CORE_SENSORS  # noqa: E402
 
 BY_KEY = {d.key: d for d in CORE_SENSORS}
 
