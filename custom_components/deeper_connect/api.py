@@ -65,8 +65,8 @@ class DeeperClient:
                     raise DeeperAuthError("unauthorized")
                 r.raise_for_status()
                 return await r.json(content_type=None)
-        except aiohttp.ClientError as err:
-            raise DeeperConnectionError(str(err)) from err
+        except (aiohttp.ClientError, asyncio.TimeoutError) as err:  # a silent device times out, it does not refuse
+            raise DeeperConnectionError(str(err) or type(err).__name__) from err
 
     async def ensure_login(self) -> None:
         async with self._lock:
@@ -79,8 +79,8 @@ class DeeperClient:
                                     json={"username": self._user, "password": _encrypt(self._pw)},
                                     timeout=aiohttp.ClientTimeout(total=15)) as r:
                 data = await r.json(content_type=None)
-        except aiohttp.ClientError as err:
-            raise DeeperConnectionError(str(err)) from err
+        except (aiohttp.ClientError, asyncio.TimeoutError) as err:
+            raise DeeperConnectionError(str(err) or type(err).__name__) from err
         if not (isinstance(data, dict) and data.get("success")):
             raise DeeperAuthError("login rejected")
         self._logged_in = True
@@ -95,9 +95,12 @@ class DeeperClient:
 
     # --- endpoints (shapes to be confirmed against a real device) ---
     async def device_id(self) -> str:
-        async with self._s.get(self._base + "/api/admin/getDeviceId", ssl=False,
-                               timeout=aiohttp.ClientTimeout(total=15)) as r:
-            return (await r.json(content_type=None))["deviceId"]
+        try:
+            async with self._s.get(self._base + "/api/admin/getDeviceId", ssl=False,
+                                   timeout=aiohttp.ClientTimeout(total=15)) as r:
+                return (await r.json(content_type=None))["deviceId"]
+        except (aiohttp.ClientError, asyncio.TimeoutError) as err:
+            raise DeeperConnectionError(str(err) or type(err).__name__) from err
 
     async def tunnels(self) -> Any:
         return await self.get("/api/smartRoute/listTunnels")
@@ -180,6 +183,6 @@ class DeeperClient:
         except asyncio.TimeoutError:
             pass
         except DeeperConnectionError as err:
-            if not isinstance(err.__cause__, aiohttp.ClientConnectionError):
+            if not isinstance(err.__cause__, (aiohttp.ClientConnectionError, asyncio.TimeoutError)):
                 raise
         return {"success": True, "assumed": "connection dropped while the device restarted"}

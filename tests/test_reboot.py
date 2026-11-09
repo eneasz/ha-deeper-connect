@@ -77,3 +77,9 @@ def test_unreachable_device_fails_at_login_and_never_sends_reboot():
 def test_explicit_refusal_still_raises_in_the_button_path():
     with pytest.raises(Exception):
         check_response(reboot(Stub(resp={"success": False, "reason": "nope"})))
+
+
+def test_timeout_wrapped_as_connection_error_still_means_rebooting():
+    err = DeeperConnectionError("TimeoutError")
+    err.__cause__ = asyncio.TimeoutError()
+    assert reboot(Stub(post_exc=err))["success"] is True

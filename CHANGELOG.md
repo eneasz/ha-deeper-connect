@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12.3
+- **Fix: a device that is off or not answering is now reported as unreachable.** Requests to a silent device time out, and timeouts were not
+  treated as connection failures. Setting up or reconfiguring with a dead address showed "Unexpected error" instead of "Cannot connect", and
+  (more importantly) a switched-off device was not counted towards the 15-minute *Deeper device not reachable* Repairs issue. Timeouts
+  now count like any other connection failure.
+- README: the verification table records the reconfigure checks on a real Home Assistant (form defaults, saving unchanged values, refusing an
+  unreachable address).
+
 ## 0.12.2
 - **Fix: entities of clients and apps you stop watching are removed.** Taking a client off *Configure → Clients to watch* used to leave its
   route-mode and blackholed sensors behind as permanently "unavailable" entities, and taking an app off the app list did the same to its dropdown.

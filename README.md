@@ -168,7 +168,7 @@ current value was sent back unchanged: it proves the request shape is accepted, 
 | Ad filter and SSL bypass switches | Accepted as no-op re-send | Real on/off change |
 | Client routing select (opt-in) | Through the HA select entity (0.12.1): disabled, full tunnel (PL) and back to smart on one client; the device's own route sensor agreed at each step and no other client changed. Earlier, through the API client: blackhole too | Real traffic behaviour of each mode |
 | Reboot button (off by default) | Pressed in HA (0.12.1): the call returned success after the 15 s client timeout, the device restarted (about a minute offline), all 81 entities came back with the same ids | |
-| Reconfigure flow | Form opens in HA with the current host and username | Saving a change, and the wrong-device refusal |
+| Reconfigure flow | In HA: the form opens with the current host and username; saving unchanged values (blank password) succeeds and keeps the entry loaded; an unreachable address is refused with "Cannot connect" (0.12.3) and nothing is saved | The wrong-device refusal (needs a second Deeper) and a wrong password |
 | DHCP discovery (`dcn-mini`) | Matcher accepted by hassfest | Discovery of a new or moved device |
 | Repairs: device unreachable | | Yes (timer, once-only raise, cleanup on recovery) |
 | Polling tiers and per-endpoint staleness | 12 requests per steady poll vs 18 before; all sections populated, read-only | Failure and recovery behaviour |
