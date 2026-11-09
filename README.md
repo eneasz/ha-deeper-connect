@@ -2,8 +2,14 @@
 
 [![Open your Home Assistant instance and open this repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=eneasz&repository=ha-deeper-connect&category=integration)
 [![Open your Home Assistant instance and start setting up Deeper Connect.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=deeper_connect)
-[![Validate](https://github.com/eneasz/ha-deeper-connect/actions/workflows/validate.yml/badge.svg)](https://github.com/eneasz/ha-deeper-connect/actions/workflows/validate.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+[![GitHub Release][releases-shield]][releases]
+[![Validate][validate-shield]][validate]
+[![Contributors][contributors-shield]][contributors]
+[![Issues][issues-shield]][issues]
+[![HACS Custom][hacs-shield]][hacs]
+[![License][license-shield]](LICENSE)
+![Made with Python][python-shield]
 
 Local-polling integration for **Deeper Connect** devices (developed against a Deeper Connect Mini,
 firmware 2.0.6.h2). No cloud. Monitors the device and its tunnels, and warns you when a tunnel needs maintenance.
@@ -195,3 +201,16 @@ translated in `translations/<lang>.json` (English and Polish ship today). To add
 
 ## Contributing
 Issues and PRs welcome, especially anonymised captures from other models/firmware. MIT licensed.
+
+[releases-shield]: https://img.shields.io/github/release/eneasz/ha-deeper-connect.svg?style=for-the-badge
+[releases]: https://github.com/eneasz/ha-deeper-connect/releases
+[validate-shield]: https://img.shields.io/github/actions/workflow/status/eneasz/ha-deeper-connect/validate.yml?branch=main&style=for-the-badge&label=validate
+[validate]: https://github.com/eneasz/ha-deeper-connect/actions/workflows/validate.yml
+[contributors-shield]: https://img.shields.io/github/contributors/eneasz/ha-deeper-connect.svg?style=for-the-badge
+[contributors]: https://github.com/eneasz/ha-deeper-connect/graphs/contributors
+[issues-shield]: https://img.shields.io/github/issues/eneasz/ha-deeper-connect.svg?style=for-the-badge
+[issues]: https://github.com/eneasz/ha-deeper-connect/issues
+[hacs-shield]: https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge
+[hacs]: https://github.com/hacs/integration
+[license-shield]: https://img.shields.io/badge/Licence-MIT-orange?style=for-the-badge
+[python-shield]: https://img.shields.io/badge/Made%20with-Python-orange?style=for-the-badge
