@@ -78,7 +78,7 @@ By default this is read-only. Entity ids depend on your device name.
 watched client also gets a `select` **Client X routing** with the options Smart route, Disabled, Blackhole (cut off), and one
 `full_<TUNNEL>` entry per tunnel (full tunnel through that exit). Choosing Blackhole stops that device's traffic, so it is off unless
 you ask for it, and turning it off again removes the selects. The write re-reads the client's current record from the device and sends
-it back with only the route changed. **Not yet verified on hardware** (see Verification status).
+it back with only the route changed. Verified on hardware only for re-sending a client's current route; actually switching modes (full tunnel, blackhole) is not yet tried (see Verification status).
 
 ## Controls
 These belong to the `dpn`, `ads_security` and `system` features (see above).
@@ -148,7 +148,7 @@ Verified on hardware: login, all read-only sensors, per-tunnel refresh.
 The settings controls use the web UI's own request bodies; the device accepted each of them (ad blocking, SSL bypass, UDP, auto-update, node selection, reboot schedule)
 when the current value was re-sent. Changing routing mode and rebooting have not been exercised on hardware.
 App relocation is verified on hardware: setting an app to a tunnel and clearing it again. Setting `direct` uses the same call and the UI's `LL` code but has not been tried on hardware.
-**Unverified:** changing a client's routing (opt-in, see Access list) uses the web UI's `accessControl/setOne` call, which has not been exercised on hardware.
+Changing a client's routing (opt-in, see Access list): the device accepted the `accessControl/setOne` call when a client's current route was re-sent unchanged (record identical afterwards, other clients untouched). **Unverified:** actually changing a client to another mode.
 **Unverified (disabled by default):** Reboot button, Ad filter and SSL bypass switches — request bodies are inferred from the
 web UI. Reports welcome.
 

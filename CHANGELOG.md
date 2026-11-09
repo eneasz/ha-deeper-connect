@@ -4,7 +4,7 @@
 - **New (opt-in): change a client's routing from HA.** *Configure → Clients to watch → Allow changing client routing* adds a
   `select` per watched client (Smart route, Disabled, Blackhole, or full tunnel through any listed tunnel). Off by default because
   Blackhole cuts a device off the network; switching it off removes the selects. The write re-reads the client's record from the
-  device just before sending it back with only the route changed. **Not yet verified on hardware.**
+  device just before sending it back with only the route changed. Verified on hardware by re-sending a client's current route (accepted, nothing else changed); switching to another mode has not been tried yet.
 - Polish and English translations for the new option and entity.
 
 ## 0.9.0
