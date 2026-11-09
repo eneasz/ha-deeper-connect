@@ -131,7 +131,7 @@ automation:
         data: {app: netflix, tunnel: direct}
 ```
 The device refuses tunnels it can't use (for example one with no active nodes, or a country-locked app);
-the service call then fails with the device's reason. The table is polled every 5 polls and refreshed immediately after a change.
+the service call then fails with the device's reason. The table is refreshed about every 5 minutes and immediately after a change.
 
 ## Tunnel locations
 Every tunnel has a **Location** sensor showing where its exit node is (flag, country and the device's region code) —
@@ -149,6 +149,11 @@ settings, public IP and the app table about every 5 minutes; firmware and device
 data straight away. If one endpoint fails, its entities keep the last value for two polls, then show **unavailable** until it works
 again (the rest keep updating); the log has one warning when that starts and an info line when it recovers, and the diagnostics
 download lists failing endpoints.
+
+**Repairs:** if the whole device stays unreachable for 15 minutes (a reboot is much shorter), Home Assistant shows a *Deeper device not
+reachable* issue under Settings → Repairs with the address it is trying and a pointer to *Reconfigure*; it disappears by itself when
+the device answers again. A wrong password uses Home Assistant's own re-authentication card, and firmware updates appear on the Firmware
+update entity, so neither is duplicated as a repair.
 
 ## Verification status
 Verified on hardware: login, all read-only sensors, per-tunnel refresh.

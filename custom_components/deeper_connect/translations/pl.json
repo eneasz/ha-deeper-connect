@@ -316,5 +316,11 @@
         "system": "System: automatyczna aktualizacja, zaplanowany restart, przycisk Restart"
       }
     }
+  },
+  "issues": {
+    "device_unreachable": {
+      "title": "Urządzenie Deeper jest niedostępne",
+      "description": "Home Assistant nie może połączyć się z urządzeniem Deeper pod adresem {host} od ponad {minutes} minut. Sprawdź, czy jest włączone i podłączone oraz czy jego adres się nie zmienił. Jeśli adres się zmienił, użyj opcji Zmień konfigurację w integracji Deeper Connect. Ten problem zniknie sam, gdy tylko urządzenie znów odpowie."
+    }
   }
 }

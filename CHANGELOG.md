@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12.0
+- **Repairs issue when the device stays unreachable.** After 15 minutes without an answer (a reboot is much shorter) a *Deeper device
+  not reachable* issue appears under Settings → Repairs, naming the address and pointing to *Reconfigure*. It clears itself on the
+  first successful poll and when the integration is unloaded. A rejected password still uses Home Assistant's own re-authentication
+  card and firmware updates stay on the Firmware update entity; neither is duplicated as a repair.
+- README: corrected the stale "every 5 polls" wording for the app table (the refresh is time based since 0.8.1).
+- English and Polish texts for the new issue.
+
 ## 0.11.0
 - **Reconfigure** from the integration menu: change host, username or password without removing and re-adding the device. The new address
   must be the same Deeper device (checked by its device id), and a blank password keeps the saved one.

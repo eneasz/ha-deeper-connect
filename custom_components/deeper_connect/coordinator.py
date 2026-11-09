@@ -10,12 +10,13 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .geo import GeoLocator
 from .api import DeeperAuthError, DeeperClient, DeeperError
-from .const import (CONF_GEO_LOOKUP, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN, FEATURE_DPN, MEDIUM_SECONDS,
+from .const import (UNREACHABLE_AFTER, CONF_GEO_LOOKUP, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN, FEATURE_DPN, MEDIUM_SECONDS,
                     SLOW_SECONDS, STALE_AFTER)
 from .features import enabled_features, polled
 
@@ -79,6 +80,8 @@ class DeeperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._force_medium = False
         self._force_slow = False
         self._clock = time.monotonic  # replaced in tests
+        self._down_since: float | None = None  # when the device first stopped answering (None: it is answering)
+        self._issue_open = False
 
     @property
     def endpoint_failures(self) -> dict[str, int]:
@@ -108,6 +111,31 @@ class DeeperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._retry.discard(key)
         self._cache[key] = value
         return value
+
+    @property
+    def _issue_id(self) -> str:
+        return f"device_unreachable_{self.config_entry.entry_id}"
+
+    def _note_failure(self) -> None:
+        """Raise a Repairs issue once the device has been unreachable for UNREACHABLE_AFTER seconds."""
+        now = self._clock()
+        if self._down_since is None:
+            self._down_since = now
+        if not self._issue_open and now - self._down_since >= UNREACHABLE_AFTER:
+            ir.async_create_issue(self.hass, DOMAIN, self._issue_id, is_fixable=False, severity=ir.IssueSeverity.WARNING,
+                                  translation_key="device_unreachable",
+                                  translation_placeholders={"host": str(self.config_entry.data.get("host", "")),
+                                                            "minutes": str(UNREACHABLE_AFTER // 60)})
+            self._issue_open = True
+
+    def _note_success(self) -> None:
+        self._down_since = None
+        self.clear_issue()
+
+    def clear_issue(self) -> None:
+        if self._issue_open:
+            ir.async_delete_issue(self.hass, DOMAIN, self._issue_id)
+            self._issue_open = False
 
     def _tier_due(self, last: float | None, every: float, forced: bool) -> bool:
         """A tier is due on the first poll, when forced, or once `every` seconds have passed.
@@ -139,7 +167,9 @@ class DeeperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         except DeeperAuthError as err:
             raise ConfigEntryAuthFailed from err
         except DeeperError as err:
+            self._note_failure()
             raise UpdateFailed(str(err)) from err
+        self._note_success()
         data: dict[str, Any] = {k: self._cache.get(k) for k in (*FAST, *medium, *slow)}
         data["tunnels"] = {t["tunnelCode"]: t for t in tunnels if isinstance(t, dict) and "tunnelCode" in t}
         apps = data.get("apps")

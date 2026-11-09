@@ -316,5 +316,11 @@
         "system": "System: auto-update, scheduled reboot, Reboot button"
       }
     }
+  },
+  "issues": {
+    "device_unreachable": {
+      "title": "Deeper device not reachable",
+      "description": "Home Assistant has not been able to reach the Deeper at {host} for over {minutes} minutes. Check that it is powered on and connected, and that its address has not changed. If the address changed, use Reconfigure on the Deeper Connect integration. This issue clears itself as soon as the device answers again."
+    }
   }
 }

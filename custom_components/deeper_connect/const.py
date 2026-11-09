@@ -31,6 +31,7 @@ LEGACY_FEATURES = {
 # SLOW_SECONDS. A tier is never polled less often than the poll itself. Control actions refresh medium + slow at once.
 MEDIUM_SECONDS = 300
 SLOW_SECONDS = 1800
+UNREACHABLE_AFTER = 900  # seconds the device must stay unreachable before a Repairs issue is raised (a reboot takes far less)
 STALE_AFTER = 3  # failed polls in a row before an endpoint's last known value is dropped (its entities go unavailable)
 PLATFORMS = ["sensor", "binary_sensor", "button", "switch", "update", "device_tracker", "select", "time"]
 # Public key shipped in the device's own web UI (used to encrypt the login password).

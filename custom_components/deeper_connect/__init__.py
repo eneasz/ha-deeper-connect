@@ -146,5 +146,6 @@ async def _reload(hass: HomeAssistant, entry: DeeperConfigEntry) -> None:
 async def async_unload_entry(hass: HomeAssistant, entry: DeeperConfigEntry) -> bool:
     ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if ok:
+        entry.runtime_data.clear_issue()  # a reload starts counting afresh
         await entry.runtime_data.session.close()
     return ok

@@ -260,3 +260,99 @@ def test_auth_error_on_optional_endpoint_still_triggers_reauth():
     from deeper_connect.api import DeeperAuthError
     with pytest.raises(ConfigEntryAuthFailed):
         poll(make((), FakeClient(fail={USAGE: DeeperAuthError("401")})))
+
+
+# ---- Repairs: device unreachable ----
+class Issues:
+    def __init__(self, monkeypatch):
+        import deeper_connect.coordinator as mod
+        self.created, self.deleted = [], []
+        monkeypatch.setattr(mod.ir, "async_create_issue", lambda hass, domain, issue_id, **kw: self.created.append((issue_id, kw)))
+        monkeypatch.setattr(mod.ir, "async_delete_issue", lambda hass, domain, issue_id: self.deleted.append(issue_id))
+
+
+def down_coordinator(monkeypatch, interval=60):
+    from types import SimpleNamespace
+    from deeper_connect.api import DeeperConnectionError
+    issues = Issues(monkeypatch)
+    client = FakeClient(tunnels_exc=DeeperConnectionError("down"))
+    c = make((), client, interval)
+    c.hass, c.config_entry = object(), SimpleNamespace(entry_id="e1", data={"host": "192.0.2.10"})
+    return c, client, issues
+
+
+def poll_ignoring_failure(c):
+    from homeassistant.helpers.update_coordinator import UpdateFailed
+    try:
+        poll(c)
+    except UpdateFailed:
+        # poll() raised before advancing the fake clock
+        c.now += c.update_interval.total_seconds()
+
+
+def test_no_issue_for_a_short_outage(monkeypatch):
+    c, _, issues = down_coordinator(monkeypatch)
+    for _ in range(10):  # 10 minutes at 60 s
+        poll_ignoring_failure(c)
+    assert issues.created == []
+
+
+def test_issue_is_raised_once_after_fifteen_minutes_with_host_and_minutes(monkeypatch):
+    c, _, issues = down_coordinator(monkeypatch)
+    for _ in range(40):
+        poll_ignoring_failure(c)
+    assert len(issues.created) == 1
+    issue_id, kw = issues.created[0]
+    assert issue_id == "device_unreachable_e1" and kw["translation_key"] == "device_unreachable" and kw["is_fixable"] is False
+    assert kw["translation_placeholders"] == {"host": "192.0.2.10", "minutes": "15"}
+
+
+def test_issue_clears_on_the_first_successful_poll_and_timer_restarts(monkeypatch):
+    c, client, issues = down_coordinator(monkeypatch)
+    for _ in range(20):
+        poll_ignoring_failure(c)
+    assert len(issues.created) == 1
+    client._tunnels_exc = None
+    poll(c)
+    assert issues.deleted == ["device_unreachable_e1"] and c._down_since is None
+    from deeper_connect.api import DeeperConnectionError
+    client._tunnels_exc = DeeperConnectionError("down again")
+    for _ in range(5):  # a new, short outage must not raise the issue straight away
+        poll_ignoring_failure(c)
+    assert len(issues.created) == 1
+
+
+def test_a_success_in_between_resets_the_outage_timer(monkeypatch):
+    from deeper_connect.api import DeeperConnectionError
+    c, client, issues = down_coordinator(monkeypatch)
+    for _ in range(10):
+        poll_ignoring_failure(c)
+    client._tunnels_exc = None
+    poll(c)
+    client._tunnels_exc = DeeperConnectionError("down")
+    for _ in range(10):  # 10 + 10 minutes in total, but never 15 in a row
+        poll_ignoring_failure(c)
+    assert issues.created == []
+
+
+def test_wrong_password_and_failing_optional_endpoints_do_not_raise_the_issue(monkeypatch):
+    from homeassistant.exceptions import ConfigEntryAuthFailed
+    from deeper_connect.api import DeeperAuthError, DeeperConnectionError
+    issues = Issues(monkeypatch)
+    c = make((), FakeClient(tunnels_exc=DeeperAuthError("401")))
+    for _ in range(30):
+        with pytest.raises(ConfigEntryAuthFailed):
+            poll(c)
+    c2 = make((), FakeClient(fail={USAGE: DeeperConnectionError("x"), SOFTWARE: DeeperConnectionError("x")}))
+    for _ in range(40):
+        poll(c2)
+    assert issues.created == []  # HA already shows its own re-authentication card; one bad endpoint is not an outage
+
+
+def test_unload_removes_an_open_issue(monkeypatch):
+    c, _, issues = down_coordinator(monkeypatch)
+    for _ in range(20):
+        poll_ignoring_failure(c)
+    c.clear_issue()
+    c.clear_issue()  # second call is a no-op
+    assert issues.deleted == ["device_unreachable_e1"]
