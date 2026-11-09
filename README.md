@@ -154,6 +154,10 @@ Layout: `sensor.py`, `binary_sensor.py`, ... hold only the always-on core. Each 
 `features/loader.py` wires the enabled ones into the platforms. To add an entity: put it in its feature module, add its unique id to the
 spec's `ids`/`patterns`, and the ownership tests will tell you if you forgot.
 
+Translations: entity names are translation keys (never hard-coded), defined in `strings.json` and `translations/en.json` (kept identical) and
+translated in `translations/<lang>.json` (English and Polish ship today). To add a language, copy `en.json`, translate the values and keep the
+`{app}` / `{client}` placeholders; the tests fail if a language has different keys or placeholders from English.
+
 `pip install homeassistant pytest && pytest` — tests run against an anonymised capture in `tests/fixtures`.
 
 ## Contributing

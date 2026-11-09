@@ -2,6 +2,8 @@
 import json, pathlib, sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent / "custom_components"))
+from _stubs import with_platform  # noqa: E402
+
 FIX = pathlib.Path(__file__).parent / "fixtures" / "device.json"
 
 
@@ -204,7 +206,7 @@ def test_app_entities_and_service():
     assert sel.current_option == "PL" and sel.options == ["not_set", "direct", "AU", "PL", "US"]
     assert AppRelocationSelect(coord, "e1", "netflix").current_option == "direct"
     assert AppRelocationSelect(coord, "e1", "zattoo").current_option == "not_set"
-    assert sel.name == "App Hbo Max relocation" and sel.unique_id == "e1_app_hboMax"
+    assert with_platform(sel).name == "App Hbo Max relocation" and sel.unique_id == "e1_app_hboMax"
     asyncio.run(sel.async_select_option("US")); asyncio.run(sel.async_select_option("not_set"))
     assert sent == [("hboMax", "US"), ("hboMax", "ZZ")]
 

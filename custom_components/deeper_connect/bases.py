@@ -29,6 +29,7 @@ class DeeperSensor(DeeperEntity, SensorEntity):
         super().__init__(coordinator, entry_id)
         self.entity_description = description
         self._attr_unique_id = f"{entry_id}_{description.key}"
+        self._attr_translation_key = description.key
         self._attr_icon = description.icon or ICONS.get(description.key)
 
     @property
@@ -68,6 +69,7 @@ class DeeperBinary(DeeperEntity, BinarySensorEntity):
         super().__init__(coordinator, entry_id)
         self.entity_description = description
         self._attr_unique_id = f"{entry_id}_{description.key}"
+        self._attr_translation_key = description.key
         self._attr_icon = description.icon or ICONS.get(description.key)
 
     @property
@@ -107,6 +109,7 @@ class DeeperSwitch(DeeperEntity, SwitchEntity):
         super().__init__(coordinator, entry_id)
         self.entity_description = description
         self._attr_unique_id = f"{entry_id}_{description.key}"
+        self._attr_translation_key = description.key
         self._attr_icon = ICONS.get(description.key)
 
     @property

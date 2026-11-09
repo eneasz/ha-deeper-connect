@@ -13,13 +13,33 @@ from ..util import BLACKHOLE, all_clients, blackholed_clients, client_title, pin
 
 
 BLACKHOLED_CLIENTS = DeeperSensorDescription(
-    key="blackholed_clients", name="Blackholed clients", state_class=SensorStateClass.MEASUREMENT,
+    key="blackholed_clients", state_class=SensorStateClass.MEASUREMENT,
     value_fn=lambda d: len(blackholed_clients(d)) if d.get("clients") else None,
     attrs_fn=lambda d: {"clients": [client_title(c) for c in blackholed_clients(d)],
                         "route_modes": dict(Counter(c.get("routeMode") or "unknown" for c in all_clients(d).values()))})
 
 
-class ClientRouteMode(DeeperEntity, SensorEntity):
+class ClientNamed:
+    """Names a per-client entity after the client's current title (the name can change in the Deeper app).
+
+    HA caches `Entity.name`, so after updating the placeholder the cached value is dropped.
+    """
+
+    def _client_label(self) -> str:
+        return client_title(self.client) if self.client else self.mac
+
+    def _refresh_name(self) -> None:
+        label = self._client_label()
+        if getattr(self, "_attr_translation_placeholders", {}).get("client") != label:
+            self._attr_translation_placeholders = {"client": label}
+            self.__dict__.pop("name", None)
+
+    def _handle_coordinator_update(self) -> None:
+        self._refresh_name()
+        super()._handle_coordinator_update()
+
+
+class ClientRouteMode(ClientNamed, DeeperEntity, SensorEntity):
     """How the device routes one client: smart, disabled (direct), blackHole (dropped), ...
 
     Alert on this changing to `blackHole` to find out when a device was cut off.
@@ -30,14 +50,12 @@ class ClientRouteMode(DeeperEntity, SensorEntity):
         self.mac = mac.lower()
         self._attr_unique_id = f"{entry_id}_client_{self.mac}_route"
         self._attr_icon = ICONS["client_route"]
+        self._attr_translation_key = "client_route_mode"
+        self._refresh_name()
 
     @property
     def client(self) -> dict:
         return all_clients(self.coordinator.data).get(self.mac) or {}
-
-    @property
-    def name(self):
-        return f"Client {client_title(self.client) if self.client else self.mac} route mode"
 
     @property
     def available(self) -> bool:
@@ -55,7 +73,7 @@ class ClientRouteMode(DeeperEntity, SensorEntity):
                 "bandwidth_limit": c.get("bwLimit")}
 
 
-class ClientBlackholed(DeeperEntity, BinarySensorEntity):
+class ClientBlackholed(ClientNamed, DeeperEntity, BinarySensorEntity):
     """On while the device drops this client's traffic (route mode blackHole). Handy for alerting."""
 
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
@@ -65,14 +83,12 @@ class ClientBlackholed(DeeperEntity, BinarySensorEntity):
         self.mac = mac.lower()
         self._attr_unique_id = f"{entry_id}_client_{self.mac}_blackholed"
         self._attr_icon = ICONS["client_blackholed"]
+        self._attr_translation_key = "client_blackholed"
+        self._refresh_name()
 
     @property
     def client(self) -> dict:
         return all_clients(self.coordinator.data).get(self.mac) or {}
-
-    @property
-    def name(self):
-        return f"Client {client_title(self.client) if self.client else self.mac} blackholed"
 
     @property
     def available(self) -> bool:

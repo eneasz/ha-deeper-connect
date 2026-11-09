@@ -96,6 +96,7 @@
   "entity": {
     "select": {
       "routing_mode": {
+        "name": "Routing mode",
         "state": {
           "smart": "Smart route",
           "full": "Full tunnel",
@@ -103,12 +104,176 @@
         }
       },
       "node_selection": {
+        "name": "Node selection mode",
         "state": {
           "none": "Regular",
           "random": "Random",
           "domain": "Domain-aware",
           "rr": "Round-robin"
         }
+      },
+      "app_relocation": {
+        "name": "App {app} relocation"
+      }
+    },
+    "sensor": {
+      "health": {
+        "name": "Health",
+        "state": {
+          "ok": "ok",
+          "warning": "warning",
+          "problem": "problem"
+        }
+      },
+      "cpu": {
+        "name": "CPU usage"
+      },
+      "memory": {
+        "name": "Memory usage"
+      },
+      "temperature": {
+        "name": "Temperature"
+      },
+      "uptime": {
+        "name": "Uptime"
+      },
+      "sessions": {
+        "name": "Sessions"
+      },
+      "tunnel_sessions": {
+        "name": "Tunnel sessions"
+      },
+      "clients_online": {
+        "name": "Clients online"
+      },
+      "live_upload": {
+        "name": "Upload speed"
+      },
+      "live_download": {
+        "name": "Download speed"
+      },
+      "local_upload": {
+        "name": "Local traffic upload"
+      },
+      "local_download": {
+        "name": "Local traffic download"
+      },
+      "client_upload": {
+        "name": "Client traffic upload"
+      },
+      "client_download": {
+        "name": "Client traffic download"
+      },
+      "routed_traffic": {
+        "name": "Routed traffic"
+      },
+      "saved_traffic": {
+        "name": "Saved traffic"
+      },
+      "blocked_total": {
+        "name": "Blocked requests"
+      },
+      "public_ip": {
+        "name": "Public IP"
+      },
+      "wan_status": {
+        "name": "WAN status"
+      },
+      "connection_mode": {
+        "name": "Connection mode"
+      },
+      "tunnel_count": {
+        "name": "Tunnels"
+      },
+      "app_sig": {
+        "name": "App signature version"
+      },
+      "rule_version": {
+        "name": "Built-in rule version"
+      },
+      "url_sig": {
+        "name": "URL signature version"
+      },
+      "relocated_apps": {
+        "name": "Relocated apps"
+      },
+      "blackholed_clients": {
+        "name": "Blackholed clients"
+      },
+      "per_tunnel_location": {
+        "name": "Location"
+      },
+      "per_tunnel_nodes": {
+        "name": "Active nodes"
+      },
+      "per_tunnel_ip": {
+        "name": "Exit IP"
+      },
+      "per_tunnel_apps": {
+        "name": "Relocated apps"
+      },
+      "client_route_mode": {
+        "name": "Client {client} route mode"
+      }
+    },
+    "binary_sensor": {
+      "health_problem": {
+        "name": "Health problem"
+      },
+      "tunnel_problem": {
+        "name": "Tunnel problem"
+      },
+      "wan_connected": {
+        "name": "WAN connected"
+      },
+      "sharing": {
+        "name": "Bandwidth sharing"
+      },
+      "per_tunnel_problem": {
+        "name": "Problem"
+      },
+      "client_blackholed": {
+        "name": "Client {client} blackholed"
+      }
+    },
+    "switch": {
+      "ads_filter": {
+        "name": "YouTube ad blocking"
+      },
+      "ssl_bypass": {
+        "name": "SSL bypass"
+      },
+      "udp_server": {
+        "name": "UDP server"
+      },
+      "auto_update": {
+        "name": "Auto-update"
+      },
+      "auto_reboot": {
+        "name": "Scheduled reboot"
+      }
+    },
+    "button": {
+      "reboot": {
+        "name": "Reboot"
+      },
+      "per_tunnel_refresh": {
+        "name": "Refresh exit node"
+      }
+    },
+    "time": {
+      "reboot_time": {
+        "name": "Scheduled reboot time"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Firmware"
+      }
+    },
+    "device_tracker": {
+      "per_tunnel_position": {
+        "name": "Exit node position"
       }
     }
   },

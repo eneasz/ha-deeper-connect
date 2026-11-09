@@ -3,6 +3,8 @@ import json, pathlib, sys
 from types import SimpleNamespace
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent / "custom_components"))
+from _stubs import with_platform  # noqa: E402
+
 FIX = pathlib.Path(__file__).parent / "fixtures" / "device.json"
 
 
@@ -53,7 +55,7 @@ def test_access_entities():
     assert ClientRouteMode(coord, "e1", tv).native_value == "blackHole"
     assert ClientBlackholed(coord, "e1", tv).is_on is True
     assert ClientBlackholed(coord, "e1", streamer).is_on is False
-    assert ClientRouteMode(coord, "e1", streamer).name == "Client Streamer route mode"
+    assert with_platform(ClientRouteMode(coord, "e1", streamer)).name == "Client Streamer route mode"
     missing = ClientBlackholed(coord, "e1", "ff:ff:ff:ff:ff:ff")
     assert missing.available is False and missing.is_on is False
     assert ClientRouteMode(coord, "e1", tv).unique_id == "e1_client_aa:bb:cc:00:00:03_route"

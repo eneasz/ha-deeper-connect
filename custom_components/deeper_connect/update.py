@@ -12,7 +12,7 @@ async def async_setup_entry(hass, entry, add):
 
 
 class FirmwareUpdate(DeeperEntity, UpdateEntity):
-    _attr_name = "Firmware"
+    _attr_translation_key = "firmware"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator, entry_id):

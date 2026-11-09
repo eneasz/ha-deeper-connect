@@ -1,0 +1,291 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Deeper Connect",
+        "description": "Adres urządzenia Deeper (34.34.34.34 w trybie routera albo jego adres IP od strony LAN/WAN).",
+        "data": {
+          "host": "Host",
+          "username": "Nazwa użytkownika",
+          "password": "Hasło"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Ponowne uwierzytelnienie",
+        "description": "Zapisane hasło już nie działa. Podaj aktualne hasło administratora.",
+        "data": {
+          "password": "Hasło"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Nie można połączyć się z urządzeniem",
+      "invalid_auth": "Nieprawidłowe dane logowania",
+      "unknown": "Nieoczekiwany błąd"
+    },
+    "abort": {
+      "already_configured": "Urządzenie jest już skonfigurowane",
+      "reauth_successful": "Ponowne uwierzytelnienie powiodło się"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opcje Deeper Connect",
+        "description": "Włącz tylko potrzebne grupy funkcji: każda dodaje encje, a niektóre także dodatkowe odpytywanie. Lokalizacje węzłów wyjściowych z dokładnością do miasta wysyłają do ipinfo.io (zapasowo geojs.io) wyłącznie adresy IP węzłów; domyślnie wyłączone, kraj jest zawsze pokazywany bez żadnego zapytania.",
+        "data": {
+          "scan_interval": "Interwał odpytywania (sekundy)",
+          "features": "Funkcje",
+          "geo_lookup": "Pobieraj online miasto i pozycję na mapie węzła wyjściowego (wymaga DPN)"
+        }
+      },
+      "apps": {
+        "title": "Przenoszenie aplikacji",
+        "description": "Każda wybrana aplikacja dostaje listę przeniesienia. Dowolną aplikację można też przenieść usługą deeper_connect.set_app_relocation.",
+        "data": {
+          "apps": "Aplikacje do sterowania"
+        }
+      },
+      "clients": {
+        "title": "Kontrola dostępu",
+        "description": "Każdy wybrany klient dostaje czujnik trybu routingu i czujnik problemu „odcięty od sieci”, dzięki czemu możesz otrzymać alert, gdy urządzenie zostanie odcięte. Liczba odciętych klientów zawsze obejmuje wszystkich klientów. Domyślnie wybrani są klienci przypięci w aplikacji Deeper.",
+        "data": {
+          "access_clients": "Klienci do obserwowania"
+        }
+      }
+    }
+  },
+  "entity": {
+    "select": {
+      "routing_mode": {
+        "name": "Tryb routingu",
+        "state": {
+          "smart": "Inteligentny routing",
+          "full": "Pełny tunel",
+          "disabled": "Wyłączony"
+        }
+      },
+      "node_selection": {
+        "name": "Tryb wyboru węzła",
+        "state": {
+          "none": "Zwykły",
+          "random": "Losowy",
+          "domain": "Według domeny",
+          "rr": "Rotacyjny"
+        }
+      },
+      "app_relocation": {
+        "name": "Przeniesienie aplikacji {app}"
+      }
+    },
+    "sensor": {
+      "health": {
+        "name": "Stan",
+        "state": {
+          "ok": "w porządku",
+          "warning": "ostrzeżenie",
+          "problem": "problem"
+        }
+      },
+      "cpu": {
+        "name": "Użycie procesora"
+      },
+      "memory": {
+        "name": "Użycie pamięci"
+      },
+      "temperature": {
+        "name": "Temperatura"
+      },
+      "uptime": {
+        "name": "Czas działania"
+      },
+      "sessions": {
+        "name": "Sesje"
+      },
+      "tunnel_sessions": {
+        "name": "Sesje tunelu"
+      },
+      "clients_online": {
+        "name": "Klienci online"
+      },
+      "live_upload": {
+        "name": "Prędkość wysyłania"
+      },
+      "live_download": {
+        "name": "Prędkość pobierania"
+      },
+      "local_upload": {
+        "name": "Ruch lokalny – wysłane"
+      },
+      "local_download": {
+        "name": "Ruch lokalny – pobrane"
+      },
+      "client_upload": {
+        "name": "Ruch klientów – wysłane"
+      },
+      "client_download": {
+        "name": "Ruch klientów – pobrane"
+      },
+      "routed_traffic": {
+        "name": "Ruch przekierowany"
+      },
+      "saved_traffic": {
+        "name": "Zaoszczędzony ruch"
+      },
+      "blocked_total": {
+        "name": "Zablokowane żądania"
+      },
+      "public_ip": {
+        "name": "Publiczny adres IP"
+      },
+      "wan_status": {
+        "name": "Stan WAN"
+      },
+      "connection_mode": {
+        "name": "Tryb połączenia"
+      },
+      "tunnel_count": {
+        "name": "Tunele"
+      },
+      "app_sig": {
+        "name": "Wersja sygnatur aplikacji"
+      },
+      "rule_version": {
+        "name": "Wersja wbudowanych reguł"
+      },
+      "url_sig": {
+        "name": "Wersja sygnatur adresów URL"
+      },
+      "relocated_apps": {
+        "name": "Przeniesione aplikacje"
+      },
+      "blackholed_clients": {
+        "name": "Klienci odcięci od sieci"
+      },
+      "per_tunnel_location": {
+        "name": "Lokalizacja"
+      },
+      "per_tunnel_nodes": {
+        "name": "Aktywne węzły"
+      },
+      "per_tunnel_ip": {
+        "name": "Adres IP wyjścia"
+      },
+      "per_tunnel_apps": {
+        "name": "Przeniesione aplikacje"
+      },
+      "client_route_mode": {
+        "name": "Klient {client} – tryb routingu"
+      }
+    },
+    "binary_sensor": {
+      "health_problem": {
+        "name": "Problem ze stanem"
+      },
+      "tunnel_problem": {
+        "name": "Problem z tunelem"
+      },
+      "wan_connected": {
+        "name": "WAN połączony"
+      },
+      "sharing": {
+        "name": "Udostępnianie łącza"
+      },
+      "per_tunnel_problem": {
+        "name": "Problem"
+      },
+      "client_blackholed": {
+        "name": "Klient {client} odcięty od sieci"
+      }
+    },
+    "switch": {
+      "ads_filter": {
+        "name": "Blokowanie reklam YouTube"
+      },
+      "ssl_bypass": {
+        "name": "Pomijanie SSL"
+      },
+      "udp_server": {
+        "name": "Serwer UDP"
+      },
+      "auto_update": {
+        "name": "Automatyczna aktualizacja"
+      },
+      "auto_reboot": {
+        "name": "Zaplanowany restart"
+      }
+    },
+    "button": {
+      "reboot": {
+        "name": "Restart"
+      },
+      "per_tunnel_refresh": {
+        "name": "Odśwież węzeł wyjściowy"
+      }
+    },
+    "time": {
+      "reboot_time": {
+        "name": "Godzina zaplanowanego restartu"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Oprogramowanie sprzętowe"
+      }
+    },
+    "device_tracker": {
+      "per_tunnel_position": {
+        "name": "Pozycja węzła wyjściowego"
+      }
+    }
+  },
+  "services": {
+    "set_app_relocation": {
+      "name": "Ustaw przeniesienie aplikacji",
+      "description": "Kieruj aplikację przez tunel, używaj dostępu bezpośredniego albo wyczyść jej przeniesienie.",
+      "fields": {
+        "config_entry": {
+          "name": "Urządzenie",
+          "description": "Które urządzenie Deeper (opcjonalne, jeśli masz tylko jedno)."
+        },
+        "app": {
+          "name": "Aplikacja",
+          "description": "Klucz lub nazwa aplikacji jak w interfejsie Deeper, np. netflix lub Disney Plus."
+        },
+        "tunnel": {
+          "name": "Tunel",
+          "description": "Kod tunelu, np. US, albo „direct” dla dostępu bezpośredniego, albo „not_set” aby wyczyścić."
+        }
+      }
+    },
+    "set_routing_mode": {
+      "name": "Ustaw tryb routingu",
+      "description": "Przełączaj między inteligentnym routingiem, pełnym tunelem i wyłączeniem. Urządzenie nie zgłasza stanu wyłącznika awaryjnego, więc wysyłane jest kill switch = wyłączony.",
+      "fields": {
+        "config_entry": {
+          "name": "Urządzenie",
+          "description": "Które urządzenie Deeper (opcjonalne, jeśli masz tylko jedno)."
+        },
+        "mode": {
+          "name": "Tryb",
+          "description": "smart, full lub disabled."
+        },
+        "tunnel": {
+          "name": "Tunel",
+          "description": "Kod tunelu dla trybu full (domyślnie zapamiętany tunel trybu pełnego)."
+        }
+      }
+    }
+  },
+  "selector": {
+    "features": {
+      "options": {
+        "dpn": "DPN: tunele (urządzenia, węzły wyjściowe, odświeżanie, mapa), tryb routingu, wybór węzła",
+        "app_relocator": "Przenoszenie aplikacji: czujniki przeniesionych aplikacji, listy aplikacji",
+        "access_control": "Kontrola dostępu: routing per klient, alerty odcięcia od sieci",
+        "ads_security": "Blokada reklam i bezpieczeństwo: blokowanie reklam YouTube, pomijanie SSL, serwer UDP",
+        "system": "System: automatyczna aktualizacja, zaplanowany restart, przycisk Restart"
+      }
+    }
+  }
+}

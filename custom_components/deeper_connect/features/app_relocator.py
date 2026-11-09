@@ -13,7 +13,7 @@ from ..util import (OPT_DIRECT, OPT_NOT_SET, app_title, apps_for_tunnel, code_to
                     relocated_apps)
 
 SENSORS = (
-    DeeperSensorDescription(key="relocated_apps", requires=("apps",), name="Relocated apps", state_class=SensorStateClass.MEASUREMENT,
+    DeeperSensorDescription(key="relocated_apps", requires=("apps",), state_class=SensorStateClass.MEASUREMENT,
                             value_fn=lambda d: len(relocated_apps(d.get("apps"))) if d.get("apps") else None,
                             attrs_fn=lambda d: {"apps": relocated_apps(d.get("apps"))}),
 )
@@ -27,7 +27,7 @@ class TunnelApps(TunnelEntity, SensorEntity):
     def __init__(self, coordinator, entry_id, code):
         super().__init__(coordinator, entry_id, code)
         self._attr_unique_id = f"{entry_id}_{code}_apps"
-        self._attr_name = "Relocated apps"
+        self._attr_translation_key = "per_tunnel_apps"
         self._attr_icon = TUNNEL_ICONS["apps"]
 
     @property
@@ -52,7 +52,8 @@ class AppRelocationSelect(DeeperEntity, SelectEntity):
         super().__init__(coordinator, entry_id)
         self.app = app
         self._attr_unique_id = f"{entry_id}_app_{app}"
-        self._attr_name = f"App {app_title(app)} relocation"
+        self._attr_translation_key = "app_relocation"
+        self._attr_translation_placeholders = {"app": app_title(app)}
 
     @property
     def _info(self) -> dict:

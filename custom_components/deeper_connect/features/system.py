@@ -18,9 +18,9 @@ def _reboot_cfg(client, on: bool, data: dict):
 
 
 SWITCHES: tuple[DeeperSwitchDescription, ...] = (
-    DeeperSwitchDescription(key="auto_update", requires=("autoupdate",), name="Auto-update", is_on_fn=flag("autoupdate", "autoUpdate"),
+    DeeperSwitchDescription(key="auto_update", requires=("autoupdate",), is_on_fn=flag("autoupdate", "autoUpdate"),
                             set_fn=lambda c, v, d: c.set_auto_update(v)),
-    DeeperSwitchDescription(key="auto_reboot", requires=("autoreboot",), name="Scheduled reboot", is_on_fn=flag("autoreboot", "on"),
+    DeeperSwitchDescription(key="auto_reboot", requires=("autoreboot",), is_on_fn=flag("autoreboot", "on"),
                             set_fn=_reboot_cfg),
 )
 
@@ -28,7 +28,7 @@ SWITCHES: tuple[DeeperSwitchDescription, ...] = (
 class RebootButton(DeeperEntity, ButtonEntity):
     """Reboot the device. Disabled by default."""
 
-    _attr_name = "Reboot"
+    _attr_translation_key = "reboot"
     _attr_device_class = ButtonDeviceClass.RESTART
     _attr_entity_registry_enabled_default = False
 
@@ -41,7 +41,7 @@ class RebootButton(DeeperEntity, ButtonEntity):
 
 
 class RebootTime(DeeperEntity, TimeEntity):
-    _attr_name = "Scheduled reboot time"
+    _attr_translation_key = "reboot_time"
     requires = ("autoreboot",)
 
     def __init__(self, coordinator, entry_id) -> None:

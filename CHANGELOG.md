@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.0
+- **Polish translation** (`pl`) for the setup/options screens, services and every entity name and state. Home Assistant picks it
+  automatically when its language is Polish; other languages keep using English.
+- Entity names now come from translation keys instead of hard-coded strings, so more languages can be added by contributing a
+  `translations/<lang>.json`. English names are unchanged, as are all entity ids and unique ids, so history, dashboards and
+  automations are not affected. (Entities already registered keep their current entity ids when the language changes.)
+- Per-client and per-app entity names are translated with placeholders (`Client {client} route mode`, `App {app} relocation`).
+  Client names still follow a rename in the Deeper app.
+- Tests check that every entity has a translation key, that English names match the previous release exactly, and that every
+  language file has the same keys and placeholders as English.
+
 ## 0.8.1
 - **Fixed: polling tiers now follow time, not poll count.** In 0.8.0 settings-like data was refreshed every 5th poll and slow data every
   30th, so with a long polling interval (for example 360 s) settings, the public IP and the routing/node-selection state could lag by

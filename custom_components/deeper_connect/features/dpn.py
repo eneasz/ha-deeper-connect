@@ -22,7 +22,7 @@ class TunnelNodes(TunnelEntity, SensorEntity):
     def __init__(self, coordinator, entry_id, code):
         super().__init__(coordinator, entry_id, code)
         self._attr_unique_id = f"{entry_id}_{code}_nodes"
-        self._attr_name = "Active nodes"
+        self._attr_translation_key = "per_tunnel_nodes"
         self._attr_icon = TUNNEL_ICONS["nodes"]
 
     @property
@@ -34,7 +34,7 @@ class TunnelIp(TunnelEntity, SensorEntity):
     def __init__(self, coordinator, entry_id, code):
         super().__init__(coordinator, entry_id, code)
         self._attr_unique_id = f"{entry_id}_{code}_ip"
-        self._attr_name = "Exit IP"
+        self._attr_translation_key = "per_tunnel_ip"
         self._attr_icon = TUNNEL_ICONS["ip"]
 
     @property
@@ -52,7 +52,7 @@ class TunnelLocation(TunnelEntity, SensorEntity):
     def __init__(self, coordinator, entry_id, code):
         super().__init__(coordinator, entry_id, code)
         self._attr_unique_id = f"{entry_id}_{code}_location"
-        self._attr_name = "Location"
+        self._attr_translation_key = "per_tunnel_location"
         self._attr_icon = TUNNEL_ICONS["location"]
 
     def _loc(self) -> dict:
@@ -77,7 +77,7 @@ class TunnelProblem(TunnelEntity, BinarySensorEntity):
     def __init__(self, coordinator, entry_id, code):
         super().__init__(coordinator, entry_id, code)
         self._attr_unique_id = f"{entry_id}_{code}_problem"
-        self._attr_name = "Problem"
+        self._attr_translation_key = "per_tunnel_problem"
         self._attr_icon = TUNNEL_ICONS["problem"]
 
     @property
@@ -91,7 +91,7 @@ class RefreshTunnel(TunnelEntity, ButtonEntity):
     def __init__(self, coordinator, entry_id, code):
         super().__init__(coordinator, entry_id, code)
         self._attr_unique_id = f"{entry_id}_{code}_refresh"
-        self._attr_name = "Refresh exit node"
+        self._attr_translation_key = "per_tunnel_refresh"
         self._attr_icon = TUNNEL_ICONS["refresh"]
 
     async def async_press(self):
@@ -106,7 +106,7 @@ class TunnelTracker(TunnelEntity, TrackerEntity):
     def __init__(self, coordinator, entry_id, code):
         super().__init__(coordinator, entry_id, code)
         self._attr_unique_id = f"{entry_id}_{code}_tracker"
-        self._attr_name = "Exit node position"
+        self._attr_translation_key = "per_tunnel_position"
         self._attr_icon = TUNNEL_ICONS["location"]
 
     def _loc(self) -> dict:
@@ -140,7 +140,6 @@ class RoutingModeSelect(DeeperEntity, SelectEntity):
     def __init__(self, coordinator, entry_id) -> None:
         super().__init__(coordinator, entry_id)
         self._attr_unique_id = f"{entry_id}_routing_mode"
-        self._attr_name = "Routing mode"
         self._attr_icon = ICONS["routing_mode"]
 
     @property
@@ -177,7 +176,6 @@ class NodeSelectionSelect(DeeperEntity, SelectEntity):
     def __init__(self, coordinator, entry_id) -> None:
         super().__init__(coordinator, entry_id)
         self._attr_unique_id = f"{entry_id}_node_selection"
-        self._attr_name = "Node selection mode"
         self._attr_icon = ICONS["node_selection"]
 
     @property

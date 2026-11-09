@@ -20,15 +20,15 @@ def _g(d, k):
 _DIAG = dict(entity_category=EntityCategory.DIAGNOSTIC)
 
 BINARY_SENSORS: tuple[DeeperBinaryDescription, ...] = (
-    DeeperBinaryDescription(key="health_problem", name="Health problem", device_class=BinarySensorDeviceClass.PROBLEM,
+    DeeperBinaryDescription(key="health_problem", device_class=BinarySensorDeviceClass.PROBLEM,
                             is_on_fn=lambda d: compute_health(d)[0] == "problem",
                             attrs_fn=lambda d: {"reasons": compute_health(d)[1]}),
-    DeeperBinaryDescription(key="tunnel_problem", name="Tunnel problem", device_class=BinarySensorDeviceClass.PROBLEM,
+    DeeperBinaryDescription(key="tunnel_problem", device_class=BinarySensorDeviceClass.PROBLEM,
                             is_on_fn=lambda d: any(tunnel_unhealthy(t) for t in (d.get("tunnels") or {}).values()),
                             attrs_fn=lambda d: {"unhealthy": [c for c, t in (d.get("tunnels") or {}).items() if tunnel_unhealthy(t)]}),
-    DeeperBinaryDescription(key="wan_connected", requires=("wifi",), name="WAN connected", device_class=BinarySensorDeviceClass.CONNECTIVITY,
+    DeeperBinaryDescription(key="wan_connected", requires=("wifi",), device_class=BinarySensorDeviceClass.CONNECTIVITY,
                             is_on_fn=lambda d: (_g(d, "wifi").get("wanStatus") == "connected") if _g(d, "wifi") else None),
-    DeeperBinaryDescription(key="sharing", requires=("sharing",), name="Bandwidth sharing", is_on_fn=lambda d: _g(d, "sharing").get("sharingEnabled"), **_DIAG),
+    DeeperBinaryDescription(key="sharing", requires=("sharing",), is_on_fn=lambda d: _g(d, "sharing").get("sharingEnabled"), **_DIAG),
 )
 
 
