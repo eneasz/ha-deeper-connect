@@ -198,7 +198,7 @@ def test_app_entities_and_service():
     async def set_tunnel(app, code): sent.append((app, code))
     coord = SimpleNamespace(data=d, last_update_success=True, async_add_listener=lambda *a, **k: (lambda: None),
                             config_entry=SimpleNamespace(data={"host": "x"}), async_set_app_tunnel=set_tunnel,
-                            features=frozenset({"app_relocation"}))
+                            features=frozenset({"app_relocator"}))
 
     sel = AppRelocationSelect(coord, "e1", "hboMax")
     assert sel.current_option == "PL" and sel.options == ["not_set", "direct", "AU", "PL", "US"]

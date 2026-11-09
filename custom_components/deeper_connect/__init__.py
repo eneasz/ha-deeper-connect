@@ -12,9 +12,9 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
 from .api import DeeperClient, DeeperError
-from .const import DOMAIN, FEATURE_APPS, PLATFORMS
+from .const import CONF_FEATURES, CONFIG_VERSION, DOMAIN, FEATURE_APPS, FEATURE_DPN, PLATFORMS
 from .coordinator import DeeperCoordinator
-from .features import features_owning
+from .features import features_owning, migrate_features
 from .util import DIRECT, NOT_SET, find_app, option_to_code, routing_request
 
 type DeeperConfigEntry = ConfigEntry[DeeperCoordinator]
@@ -55,7 +55,7 @@ async def async_setup(hass: HomeAssistant, config) -> bool:
             raise ServiceValidationError("No loaded Deeper Connect device found")
         coordinator = entries[0].runtime_data
         if FEATURE_APPS not in coordinator.features:
-            raise ServiceValidationError("Enable the 'App relocation' feature in the integration options first")
+            raise ServiceValidationError("Enable the 'App Relocator' feature in the integration options first")
         apps = coordinator.data.get("apps") or {}
         app = find_app(apps, call.data["app"])
         if app is None:
@@ -71,6 +71,8 @@ async def async_setup(hass: HomeAssistant, config) -> bool:
 
     async def set_routing_mode(call: ServiceCall) -> None:
         coordinator = _loaded_entry(hass, call.data.get("config_entry")).runtime_data
+        if FEATURE_DPN not in coordinator.features:
+            raise ServiceValidationError("Enable the 'DPN' feature in the integration options first")
         try:
             body = routing_request(call.data["mode"], call.data.get("tunnel"), coordinator.data.get("dpn"),
                                    coordinator.data["tunnels"])
@@ -83,6 +85,18 @@ async def async_setup(hass: HomeAssistant, config) -> bool:
 
     hass.services.async_register(DOMAIN, "set_app_relocation", set_app_relocation, schema=SET_APP_SCHEMA)
     hass.services.async_register(DOMAIN, "set_routing_mode", set_routing_mode, schema=SET_ROUTING_SCHEMA)
+    return True
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: DeeperConfigEntry) -> bool:
+    """v1 -> v2: feature groups were renamed after the Deeper UI sections. Unique ids are unchanged."""
+    if entry.version > CONFIG_VERSION:
+        return False  # created by a newer release; do not guess
+    if entry.version == 1:
+        options = dict(entry.options)
+        if options.get(CONF_FEATURES) is not None:  # entries that never saved the option follow the new defaults
+            options[CONF_FEATURES] = migrate_features(options[CONF_FEATURES])
+        hass.config_entries.async_update_entry(entry, options=options, version=CONFIG_VERSION)
     return True
 
 

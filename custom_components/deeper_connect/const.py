@@ -8,15 +8,28 @@ DEFAULT_SCAN_INTERVAL = 60
 MIN_SCAN_INTERVAL = 15
 CONF_FEATURES = "features"  # optional feature groups the user enabled
 CONF_CLIENTS = "access_clients"  # client MACs that get their own route-mode entities
-FEATURE_ACCESS = "access_control"  # per-client routing (smart / direct / blackhole ...) visibility
-FEATURE_TUNNELS = "tunnels"  # per-tunnel sub-devices, refresh buttons, map positions
-FEATURE_APPS = "app_relocation"  # app relocation sensors, selects and polling
-FEATURE_CONTROLS = "controls"  # switches / selects / reboot controls and the settings they poll
-ALL_FEATURES = (FEATURE_ACCESS, FEATURE_TUNNELS, FEATURE_APPS, FEATURE_CONTROLS)
-# Features that were always on before flags existed stay on for entries that never saved the option.
-DEFAULT_FEATURES = (FEATURE_TUNNELS, FEATURE_APPS, FEATURE_CONTROLS)
-APPS_EVERY = 5  # app-relocation table refreshes every N polls
-SLOW_EVERY = 30  # slow endpoints (versions, settings) refresh every N polls
+CONFIG_VERSION = 2  # 1 -> 2: feature groups renamed to follow the Deeper UI sections (see features.migrate_features)
+# Feature groups, named after the sections of the Deeper web UI.
+FEATURE_DPN = "dpn"  # DPN: tunnels (sub-devices, refresh, map), routing mode, node selection
+FEATURE_APPS = "app_relocator"  # App Relocator: relocated-apps sensors, per-app dropdowns, the app table polling
+FEATURE_ACCESS = "access_control"  # Access Control: per-client routing (smart / direct / blackhole ...) visibility
+FEATURE_ADS = "ads_security"  # Ads Blocker + Security: YouTube ad blocking, SSL bypass, internal UDP server
+FEATURE_SYSTEM = "system"  # Settings/Device: auto-update, scheduled reboot, Reboot button
+ALL_FEATURES = (FEATURE_DPN, FEATURE_APPS, FEATURE_ACCESS, FEATURE_ADS, FEATURE_SYSTEM)
+# Entries that never saved the option keep what was always on before feature flags existed.
+DEFAULT_FEATURES = (FEATURE_DPN, FEATURE_APPS, FEATURE_ADS, FEATURE_SYSTEM)
+# Feature keys of config entry version 1 -> the groups that replace them.
+LEGACY_FEATURES = {
+    "tunnels": (FEATURE_DPN,),
+    "app_relocation": (FEATURE_APPS,),
+    "access_control": (FEATURE_ACCESS,),
+    "controls": (FEATURE_DPN, FEATURE_ADS, FEATURE_SYSTEM),  # routing/node selects, ad/SSL/UDP switches, reboot controls
+}
+# Polling tiers (in polls): fast data every poll, settings-like "medium" data (and the app table) every MEDIUM_EVERY,
+# rarely changing "slow" data (versions, device settings) every SLOW_EVERY. Control actions refresh medium + slow at once.
+MEDIUM_EVERY = 5
+SLOW_EVERY = 30
+STALE_AFTER = 3  # failed polls in a row before an endpoint's last known value is dropped (its entities go unavailable)
 PLATFORMS = ["sensor", "binary_sensor", "button", "switch", "update", "device_tracker", "select", "time"]
 # Public key shipped in the device's own web UI (used to encrypt the login password).
 LOGIN_PUBLIC_KEY = """-----BEGIN PUBLIC KEY-----

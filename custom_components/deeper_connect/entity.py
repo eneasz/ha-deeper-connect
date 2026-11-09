@@ -1,6 +1,7 @@
 """Shared entity bases."""
 from __future__ import annotations
 
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -10,6 +11,13 @@ from .location import tunnel_title
 
 class DeeperEntity(CoordinatorEntity):
     _attr_has_entity_name = True
+    requires: tuple[str, ...] = ()  # coordinator data sections this entity reads; unavailable while any is missing
+
+    @property
+    def available(self) -> bool:
+        needs = getattr(getattr(self, "entity_description", None), "requires", None) or self.requires
+        data = self.coordinator.data or {}
+        return super().available and all(data.get(section) is not None for section in needs)
 
     def __init__(self, coordinator, entry_id: str) -> None:
         super().__init__(coordinator)
@@ -67,3 +75,9 @@ def add_tunnel_entities(coordinator, entry_id, add, factory) -> None:
 
     _sync()
     coordinator.config_entry.async_on_unload(coordinator.async_add_listener(_sync))
+
+
+def check_response(resp) -> None:
+    """Raise if the device answered but refused (it uses success: false)."""
+    if isinstance(resp, dict) and resp.get("success") is False:
+        raise HomeAssistantError(f"Device rejected the request: {resp.get('reason', 'unknown reason')}")

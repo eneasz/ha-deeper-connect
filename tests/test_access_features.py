@@ -12,7 +12,7 @@ def data():
 
 def test_enabled_features_defaults_keep_old_behaviour():
     from deeper_connect.features import enabled_features
-    assert enabled_features({}) == {"tunnels", "app_relocation", "controls"}
+    assert enabled_features({}) == {"dpn", "app_relocator", "ads_security", "system"}  # what was always on before flags
     assert enabled_features({"features": ["access_control", "bogus"]}) == {"access_control"}
     assert enabled_features({"features": []}) == frozenset()
 
@@ -30,9 +30,11 @@ def test_client_helpers():
 
 def test_features_owning():
     from deeper_connect.features import features_owning
-    assert features_owning("ads_filter") == {"controls"} and features_owning("reboot") == {"controls"}
-    assert features_owning("relocated_apps") == {"app_relocation"} and features_owning("app_netflix") == {"app_relocation"}
-    assert features_owning("AU_apps") == {"tunnels", "app_relocation"} and features_owning("AU_refresh") == {"tunnels"}
+    assert features_owning("ads_filter") == {"ads_security"} == features_owning("udp_server") == features_owning("ssl_bypass")
+    assert features_owning("reboot") == {"system"} == features_owning("auto_update") == features_owning("reboot_time")
+    assert features_owning("routing_mode") == {"dpn"} == features_owning("node_selection")
+    assert features_owning("relocated_apps") == {"app_relocator"} and features_owning("app_netflix") == {"app_relocator"}
+    assert features_owning("AU_apps") == {"dpn", "app_relocator"} and features_owning("AU_refresh") == {"dpn"}
     assert features_owning("client_aa:bb:cc:00:00:03_route") == {"access_control"} == features_owning("blackholed_clients")
     for always in ("health", "cpu", "tunnel_count", "tunnel_problem", "firmware", "clients_online", "wan_connected",
                    "public_ip", "app_sig", "client_upload", "client_download", "local_upload", "rule_version", "sharing"):

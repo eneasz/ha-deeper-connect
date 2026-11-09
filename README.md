@@ -37,16 +37,20 @@ a nearly full session table, or a pending firmware update.
 
 ## Features (keep the entity count down)
 Everything beyond the core health/resources/traffic sensors lives in a feature group you switch on under
-*Configure → Features*. A disabled group creates no entities and its API calls are not made.
+*Configure → Features*. The groups are named after the sections of the Deeper web UI. A disabled group creates no
+entities and its API calls are not made.
 
-| Feature | Adds | Default |
+| Feature (Deeper UI section) | Adds | Default |
 |---|---|---|
-| `access_control` | Blackholed-clients sensor, per-client route mode + blackholed sensors | **off** |
-| `tunnels` | per-tunnel sub-devices (location, nodes, exit IP, problem, refresh button, map) | on |
-| `app_relocation` | relocated-apps sensors, app dropdowns, the app table polling | on |
-| `controls` | switches, routing/node selects, scheduled reboot, Reboot button, the settings they read | on |
+| `dpn` (DPN) | per-tunnel sub-devices (location, nodes, exit IP, problem, refresh button, map), routing mode and node selection | on |
+| `app_relocator` (App Relocator) | relocated-apps sensors, app dropdowns, the app table polling | on |
+| `access_control` (Access Control) | Blackholed-clients sensor, per-client route mode + blackholed sensors | **off** |
+| `ads_security` (Ads Blocker, Security) | YouTube ad blocking, SSL bypass and UDP server switches | on |
+| `system` (Settings, Device) | auto-update and scheduled-reboot switches, reboot time, Reboot button | on |
 
 Turning a group off removes its entities from the registry. Tunnel health still feeds `Health` and `Tunnel problem` either way.
+Upgrading from 0.7.x: your saved choices are converted automatically (the old `controls` group became `dpn`, `ads_security` and `system`);
+entity ids and history are unchanged.
 
 ## Access list
 The Deeper routes every client in one of several modes: `smart`, `disabled` (direct), a full-tunnel region, or `blackHole`
@@ -71,6 +75,8 @@ automation:
 This is read-only: changing a client's route mode is done in the Deeper app. Entity ids depend on your device name.
 
 ## Controls
+These belong to the `dpn`, `ads_security` and `system` features (see above).
+
 | Entity | What it does | Enabled by default |
 |---|---|---|
 | `switch` YouTube ad blocking, SSL bypass, UDP server, Auto-update | toggle those device settings | yes |
@@ -119,10 +125,17 @@ Every tunnel has a **Location** sensor showing where its exit node is (flag, cou
 this works offline from the tunnel's country code.
 
 For **city-level location and a map pin** per tunnel, open the integration → *Configure* → enable
-*Look up exit-node city and map position online*. This is **off by default** because it sends the tunnel
+*Look up exit-node city and map position online* (needs the `dpn` feature). This is **off by default** because it sends the tunnel
 exit-node IP addresses (not your own, and no credentials) to [ipinfo.io](https://ipinfo.io), falling back to
 [geojs.io](https://www.geojs.io). Results are cached until the exit node changes. Accuracy is city-level at best.
 The map pins appear as `device_tracker` entities and work with the Map card.
+
+## Polling and availability
+Everything is read from the device every 60 s (configurable): live data (health, resources, traffic, clients, tunnels) each poll;
+settings and the app table every 5th poll; firmware and device settings every 30th. Changing something from HA refreshes the slower
+data straight away. If one endpoint fails, its entities keep the last value for two polls, then show **unavailable** until it works
+again (the rest keep updating); the log has one warning when that starts and an info line when it recovers, and the diagnostics
+download lists failing endpoints.
 
 ## Verification status
 Verified on hardware: login, all read-only sensors, per-tunnel refresh.
@@ -135,6 +148,12 @@ web UI. Reports welcome.
 Unofficial; not affiliated with Deeper Network. The device API is undocumented and may change between firmware versions.
 
 ## Development
+Layout: `sensor.py`, `binary_sensor.py`, ... hold only the always-on core. Each optional feature is one module in
+`custom_components/deeper_connect/features/` (`dpn`, `app_relocator`, `access_control`, `ads_security`, `system`) with its entities and a
+`setup_<platform>` hook; `features/__init__.py` is the registry (which endpoints and entity ids each feature owns) and
+`features/loader.py` wires the enabled ones into the platforms. To add an entity: put it in its feature module, add its unique id to the
+spec's `ids`/`patterns`, and the ownership tests will tell you if you forgot.
+
 `pip install homeassistant pytest && pytest` — tests run against an anonymised capture in `tests/fixtures`.
 
 ## Contributing

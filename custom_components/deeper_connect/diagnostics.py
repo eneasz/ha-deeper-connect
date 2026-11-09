@@ -13,4 +13,5 @@ async def async_get_config_entry_diagnostics(hass, entry):
     data["clients"] = {k: len(v) for k, v in clients.items() if isinstance(v, list)}
     data.pop("live", None)
     return {"entry": async_redact_data(dict(entry.data), REDACT), "options": dict(entry.options),
+            "endpoint_failures": entry.runtime_data.endpoint_failures,  # endpoint key -> consecutive failed polls
             "data": async_redact_data(data, REDACT)}

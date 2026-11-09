@@ -13,7 +13,7 @@ from .features import enabled_features
 from .util import all_clients, app_title, client_title, customised_apps, pinned_clients
 
 from .api import DeeperAuthError, DeeperClient, DeeperConnectionError
-from .const import (ALL_FEATURES, CONF_APPS, CONF_CLIENTS, CONF_FEATURES, CONF_GEO_LOOKUP, CONF_SCAN_INTERVAL, DEFAULT_HOST,
+from .const import (ALL_FEATURES, CONFIG_VERSION, CONF_APPS, CONF_CLIENTS, CONF_FEATURES, CONF_GEO_LOOKUP, CONF_SCAN_INTERVAL, DEFAULT_HOST,
                     DEFAULT_SCAN_INTERVAL, DOMAIN, FEATURE_ACCESS, FEATURE_APPS, MIN_SCAN_INTERVAL)
 
 
@@ -36,7 +36,7 @@ async def _validate(data: dict) -> tuple[str | None, str | None]:
 
 
 class DeeperConfigFlow(ConfigFlow, domain=DOMAIN):
-    VERSION = 1
+    VERSION = CONFIG_VERSION
 
     @staticmethod
     @callback

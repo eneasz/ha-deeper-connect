@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.8.0
+- **Feature groups now follow the Deeper UI sections.** `tunnels` + the routing/node selects became **`dpn`**, `app_relocation` became
+  **`app_relocator`**, the ad/SSL/UDP switches became **`ads_security`**, and auto-update, scheduled reboot and Reboot became **`system`**.
+  `access_control` is unchanged. The old `controls` group is split across `dpn`, `ads_security` and `system`.
+- **Automatic migration** (config entry version 1 → 2): saved feature choices are converted, entity ids and history are unchanged, and
+  entries that never saved a choice keep exactly what they had. If you had `controls` on without `tunnels`, you now also get the `dpn`
+  tunnel devices; switch `dpn` off if you don't want them (note: that also removes the routing and node-selection selects).
+- The `set_routing_mode` service now needs the `dpn` feature (the routing data is only polled when it is on) and says so.
+- Internally, a single registry (`features.SPECS`) declares each feature's endpoints and entities. It replaces the per-id regex and the
+  hard-coded control endpoint lists, so a disabled group no longer polls the routing, node-selection, ad/SSL/UDP, auto-update and reboot-schedule endpoints.
+- Code is now organised by feature: `features/{dpn,app_relocator,access_control,ads_security,system}.py` each hold their own entities and
+  the per-platform setup, and the platform files (`sensor.py`, `switch.py`, ...) only keep the always-on core. No entity changed: all
+  entities (class, unique id, name, icon, device, state) were compared against 0.7.0 for every equivalent feature combination.
+- **Smarter polling.** Endpoints now run in three tiers: fast data every poll, settings-like data (routing mode, node selection,
+  ad/SSL/UDP settings, public IP) and the app table every 5th poll, and versions and device settings every 30th. Control actions
+  refresh the slower tiers immediately. A normal poll makes 12 requests instead of 18 (about 26% fewer on average).
+- **Failures are handled per endpoint.** One failing endpoint no longer blanks its entities until the next slow refresh: it keeps its last
+  value for two polls, is retried every poll, and then the entities that read it become **unavailable** (not "unknown"). A warning is
+  logged once when it starts failing and when it turns stale, an info line when it recovers, and the diagnostics download now lists
+  failing endpoints (`endpoint_failures`).
+- Tests: 23 → 197, now covering the config and options flows, coordinator tiers and failure handling, entity availability, migration,
+  and feature clean-up.
+
 ## 0.7.0
 - **Access list (new, opt-in):** the device's per-client routing (`smart`, `disabled`, `blackHole`, ...) is now visible.
   A **Blackholed clients** sensor counts clients whose traffic is dropped (attributes: which, and a count per route mode), and every
