@@ -54,6 +54,8 @@
  "e1_routing_mode": "Routing mode",
  "e1_rule_version": "Built-in rule version",
  "e1_saved_traffic": "Saved traffic",
+ "e1_server_download": "Shared traffic download",
+ "e1_server_upload": "Shared traffic upload",
  "e1_sessions": "Sessions",
  "e1_sharing": "Bandwidth sharing",
  "e1_ssl_bypass": "SSL bypass",

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.0
+- **New: shared traffic sensors.** *Shared traffic upload* and *Shared traffic download* show the data the device reports as `serverTraffic`,
+  that is traffic from other Deeper users that went through your device while Bandwidth sharing is on. They are totals, so they stay at 0
+  until someone uses your connection, and the device does not report a number of users. The values come from the traffic data the
+  integration already fetches, so there are no extra requests to the device. English and Polish names included.
+
 ## 0.12.3
 - **Fix: a device that is off or not answering is now reported as unreachable.** Requests to a silent device time out, and timeouts were not
   treated as connection failures. Setting up or reconfiguring with a dead address showed "Unexpected error" instead of "Cannot connect", and

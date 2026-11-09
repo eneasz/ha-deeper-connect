@@ -78,6 +78,8 @@ CORE_SENSORS: tuple[DeeperSensorDescription, ...] = (
     DeeperSensorDescription(key="local_download", requires=("traffic",), value_fn=_size("traffic", "localTraffic", "download"), **_BYTES),
     DeeperSensorDescription(key="client_upload", requires=("traffic",), value_fn=_size("traffic", "clientTraffic", "upload"), **_BYTES),
     DeeperSensorDescription(key="client_download", requires=("traffic",), value_fn=_size("traffic", "clientTraffic", "download"), **_BYTES),
+    DeeperSensorDescription(key="server_upload", requires=("traffic",), value_fn=_size("traffic", "serverTraffic", "upload"), **_BYTES),
+    DeeperSensorDescription(key="server_download", requires=("traffic",), value_fn=_size("traffic", "serverTraffic", "download"), **_BYTES),
     DeeperSensorDescription(key="routed_traffic", requires=("routed",), value_fn=lambda d: to_float(_g(d, "routed").get("traffic")),
                             **{**_BYTES, "state_class": SensorStateClass.TOTAL_INCREASING}),
     DeeperSensorDescription(key="saved_traffic", requires=("saved",), value_fn=lambda d: to_float(_g(d, "saved").get("saved")),

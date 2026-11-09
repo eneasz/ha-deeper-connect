@@ -155,6 +155,12 @@
       "client_download": {
         "name": "Ruch klientów – pobrane"
       },
+      "server_upload": {
+        "name": "Ruch udostępniony – wysłane"
+      },
+      "server_download": {
+        "name": "Ruch udostępniony – pobrane"
+      },
       "routed_traffic": {
         "name": "Ruch przekierowany"
       },

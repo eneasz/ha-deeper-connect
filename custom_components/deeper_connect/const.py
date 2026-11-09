@@ -52,6 +52,7 @@ ICONS = {
     "sessions": "mdi:swap-horizontal", "tunnel_sessions": "mdi:tunnel", "clients_online": "mdi:lan-connect",
     "local_upload": "mdi:upload-network", "local_download": "mdi:download-network",
     "client_upload": "mdi:upload-network-outline", "client_download": "mdi:download-network-outline",
+    "server_upload": "mdi:cloud-upload-outline", "server_download": "mdi:cloud-download-outline",
     "routed_traffic": "mdi:routes", "saved_traffic": "mdi:piggy-bank-outline", "blocked_total": "mdi:shield-check",
     "public_ip": "mdi:ip-network", "wan_status": "mdi:wan", "connection_mode": "mdi:router-network",
     "dpn_mode": "mdi:map-marker-path", "lb_mode": "mdi:scale-balance", "tunnel_count": "mdi:tunnel-outline",

@@ -193,6 +193,12 @@
       "client_download": {
         "name": "Client traffic download"
       },
+      "server_upload": {
+        "name": "Shared traffic upload"
+      },
+      "server_download": {
+        "name": "Shared traffic download"
+      },
       "routed_traffic": {
         "name": "Routed traffic"
       },
