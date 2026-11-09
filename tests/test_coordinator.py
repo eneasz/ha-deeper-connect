@@ -1,6 +1,7 @@
 """Coordinator polling: tiers, per-endpoint failure handling, and how errors map to HA exceptions."""
 import asyncio
 import logging
+from datetime import timedelta
 
 import pytest
 
@@ -36,11 +37,15 @@ class FakeClient:
         return {"path": path}
 
 
-def make(features, client):
+def make(features, client, interval=60):
+    """A coordinator with a fake clock: every poll() advances time by one polling interval."""
     from deeper_connect.coordinator import DeeperCoordinator
     c = object.__new__(DeeperCoordinator)  # skip DataUpdateCoordinator.__init__ (needs a running hass)
     c.client, c.features, c.session, c.geo = client, frozenset(features), None, None
+    c.update_interval = timedelta(seconds=interval)
     c._init_state()
+    c.now = 1000.0
+    c._clock = lambda: c.now
     return c
 
 
@@ -52,6 +57,7 @@ def poll(c, n=1):
     out = None
     for _ in range(n):
         out = run(c._async_update_data())
+        c.now += c.update_interval.total_seconds()
     return out
 
 
@@ -98,18 +104,31 @@ def test_fast_endpoints_are_polled_every_time():
 
 @pytest.mark.parametrize("path,features", [(APPS, ("app_relocator",)), ("/api/smartRoute/getDpnMode", ("dpn",)),
                                            ("/api/tproxy/adsFilter", ("ads_security",)), (NETWORK, ())])
-def test_medium_endpoints_polled_first_then_every_fifth(path, features):
-    from deeper_connect.const import MEDIUM_EVERY
+def test_medium_endpoints_polled_first_then_about_every_five_minutes(path, features):
     client = FakeClient()
-    seen = counts_per_poll(make(features, client), client, path, MEDIUM_EVERY + 1)
-    assert seen == [1] + [0] * (MEDIUM_EVERY - 1) + [1]
+    seen = counts_per_poll(make(features, client), client, path, 6)  # 60 s polls: the 6th poll is 300 s after the first
+    assert seen == [1, 0, 0, 0, 0, 1]
 
 
-def test_slow_endpoints_polled_first_then_every_slow_interval():
-    from deeper_connect.const import SLOW_EVERY
+@pytest.mark.parametrize("interval,medium_every,slow_every", [(15, 20, 120), (60, 5, 30), (120, 2, 15), (360, 1, 5), (900, 1, 2)])
+def test_tiers_follow_elapsed_time_not_poll_count(interval, medium_every, slow_every):
+    """Whatever the polling interval, medium data is at most ~5 min old and slow data ~30 min (never rarer than a poll)."""
     client = FakeClient()
-    seen = counts_per_poll(make((), client), client, SOFTWARE, SLOW_EVERY + 1)
-    assert seen[0] == 1 and seen[-1] == 1 and sum(seen) == 2
+    c = make(("dpn",), client, interval)
+    medium = counts_per_poll(c, client, "/api/smartRoute/getDpnMode", slow_every * 2 + 1)
+    assert [i for i, n in enumerate(medium) if n] == list(range(0, len(medium), medium_every))
+    client2 = FakeClient()
+    slow = counts_per_poll(make((), client2, interval), client2, SOFTWARE, slow_every * 2 + 1)
+    assert [i for i, n in enumerate(slow) if n] == [0, slow_every, slow_every * 2]
+
+
+def test_timing_jitter_does_not_push_a_refresh_to_the_next_poll():
+    client = FakeClient()
+    c = make(("dpn",), client, 60)
+    for t in (0, 59.5, 119.0, 178.7, 238.4, 298.1):  # polls arrive a little early or late
+        c.now = 1000.0 + t
+        run(c._async_update_data())
+    assert client.paths.count("/api/smartRoute/getDpnMode") == 2  # first poll + the one at ~300 s
 
 
 def test_cached_values_are_served_between_polls():
@@ -124,6 +143,7 @@ def test_forced_refresh_rereads_medium_and_slow_then_resets():
     c = make(("dpn", "system"), client)
     poll(c, 2)
     before = {p: client.paths.count(p) for p in (SOFTWARE, "/api/smartRoute/getDpnMode")}
+    assert before[SOFTWARE] == 1 and before["/api/smartRoute/getDpnMode"] == 1  # not due yet
     c._force_medium = c._force_slow = True
     poll(c)
     assert client.paths.count(SOFTWARE) == before[SOFTWARE] + 1
@@ -165,7 +185,7 @@ def test_failing_endpoint_is_retried_every_poll_even_if_slow():
     from deeper_connect.api import DeeperConnectionError
     client = FakeClient(fail={SOFTWARE: DeeperConnectionError("boom")})
     c = make((), client)
-    assert counts_per_poll(c, client, SOFTWARE, 4) == [1, 1, 1, 1]  # not once per SLOW_EVERY polls
+    assert counts_per_poll(c, client, SOFTWARE, 4) == [1, 1, 1, 1]  # not once per SLOW_SECONDS
     del client.fail[SOFTWARE]
     assert poll(c)["software"] == {"path": SOFTWARE} and c.endpoint_failures == {}
     assert counts_per_poll(c, client, SOFTWARE, 3) == [0, 0, 0]  # back to its normal cadence

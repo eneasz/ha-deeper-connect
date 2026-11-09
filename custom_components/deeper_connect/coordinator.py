@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 from datetime import timedelta
 import logging
+import time
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -14,8 +15,8 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .geo import GeoLocator
 from .api import DeeperAuthError, DeeperClient, DeeperError
-from .const import (CONF_GEO_LOOKUP, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN, FEATURE_DPN, MEDIUM_EVERY,
-                    SLOW_EVERY, STALE_AFTER)
+from .const import (CONF_GEO_LOOKUP, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN, FEATURE_DPN, MEDIUM_SECONDS,
+                    SLOW_SECONDS, STALE_AFTER)
 from .features import enabled_features, polled
 
 _LOGGER = logging.getLogger(__name__)
@@ -34,7 +35,7 @@ FAST = {  # every poll
     "clients": "/api/accessControl/list",
     "live": "/api/dynamic-data",
 }
-MEDIUM = {  # every MEDIUM_EVERY polls: settings that only change when someone edits them, the public IP, the app table
+MEDIUM = {  # about every MEDIUM_SECONDS: settings that only change when someone edits them, the public IP, the app table
     "network": "/api/system-info/network-address",
     "dpn": "/api/smartRoute/getDpnMode",
     "lb": "/api/smartRoute/nodeLbMode",
@@ -43,7 +44,7 @@ MEDIUM = {  # every MEDIUM_EVERY polls: settings that only change when someone e
     "udp": "/api/security/settings/udpServer",
     "apps": "/api/appRelocator/appsData",
 }
-SLOW = {  # every SLOW_EVERY polls
+SLOW = {  # about every SLOW_SECONDS
     "software": "/api/system-info/software-info",
     "latest": "/api/system-info/get-latestversion",
     "device": "/api/system-info/device-name",
@@ -73,9 +74,11 @@ class DeeperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._cache: dict[str, Any] = {}  # last good response per endpoint key
         self._fails: dict[str, int] = {}  # consecutive failed polls per endpoint key
         self._retry: set[str] = set()  # failed keys, refetched next poll even if their tier is not due
-        self._polls = 0
+        self._last_medium: float | None = None  # clock time of the last full refresh of each tier (None: never)
+        self._last_slow: float | None = None
         self._force_medium = False
         self._force_slow = False
+        self._clock = time.monotonic  # replaced in tests
 
     @property
     def endpoint_failures(self) -> dict[str, int]:
@@ -106,10 +109,20 @@ class DeeperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._cache[key] = value
         return value
 
+    def _tier_due(self, last: float | None, every: float, forced: bool) -> bool:
+        """A tier is due on the first poll, when forced, or once `every` seconds have passed.
+
+        Half a poll interval of slack keeps normal timing jitter from pushing a refresh to the next poll.
+        """
+        if forced or last is None:
+            return True
+        interval = self.update_interval.total_seconds() if self.update_interval else 0.0
+        return self._clock() - last >= every - interval / 2
+
     async def _async_update_data(self) -> dict[str, Any]:
-        first = self._polls == 0
-        due_medium = first or self._force_medium or self._polls % MEDIUM_EVERY == 0
-        due_slow = first or self._force_slow or self._polls % SLOW_EVERY == 0
+        now = self._clock()
+        due_medium = self._tier_due(self._last_medium, MEDIUM_SECONDS, self._force_medium)
+        due_slow = self._tier_due(self._last_slow, SLOW_SECONDS, self._force_slow)
         medium, slow = polled(MEDIUM, self.features, "medium"), polled(SLOW, self.features, "slow")
         todo = dict(FAST)
         todo.update({k: MEDIUM[k] for k in medium if due_medium or k in self._retry})
@@ -119,7 +132,10 @@ class DeeperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             tunnels = await self.client.tunnels()
             await asyncio.gather(*(self._fetch(k, p) for k, p in todo.items()))
             self._force_medium = self._force_slow = False
-            self._polls += 1
+            if due_medium:
+                self._last_medium = now
+            if due_slow:
+                self._last_slow = now
         except DeeperAuthError as err:
             raise ConfigEntryAuthFailed from err
         except DeeperError as err:

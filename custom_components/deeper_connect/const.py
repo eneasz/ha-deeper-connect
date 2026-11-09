@@ -25,10 +25,11 @@ LEGACY_FEATURES = {
     "access_control": (FEATURE_ACCESS,),
     "controls": (FEATURE_DPN, FEATURE_ADS, FEATURE_SYSTEM),  # routing/node selects, ad/SSL/UDP switches, reboot controls
 }
-# Polling tiers (in polls): fast data every poll, settings-like "medium" data (and the app table) every MEDIUM_EVERY,
-# rarely changing "slow" data (versions, device settings) every SLOW_EVERY. Control actions refresh medium + slow at once.
-MEDIUM_EVERY = 5
-SLOW_EVERY = 30
+# Polling tiers (in seconds, so they do not depend on the polling interval): fast data every poll, settings-like "medium"
+# data (and the app table) about every MEDIUM_SECONDS, rarely changing "slow" data (versions, device settings) about every
+# SLOW_SECONDS. A tier is never polled less often than the poll itself. Control actions refresh medium + slow at once.
+MEDIUM_SECONDS = 300
+SLOW_SECONDS = 1800
 STALE_AFTER = 3  # failed polls in a row before an endpoint's last known value is dropped (its entities go unavailable)
 PLATFORMS = ["sensor", "binary_sensor", "button", "switch", "update", "device_tracker", "select", "time"]
 # Public key shipped in the device's own web UI (used to encrypt the login password).

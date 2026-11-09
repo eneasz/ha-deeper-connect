@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.1
+- **Fixed: polling tiers now follow time, not poll count.** In 0.8.0 settings-like data was refreshed every 5th poll and slow data every
+  30th, so with a long polling interval (for example 360 s) settings, the public IP and the routing/node-selection state could lag by
+  30 minutes or more. Medium data (settings, public IP, app table) is now refreshed about every 5 minutes and slow data (versions,
+  device settings) about every 30 minutes, whatever the polling interval, and never less often than the poll itself. With the default
+  60 s interval nothing changes.
+
 ## 0.8.0
 - **Feature groups now follow the Deeper UI sections.** `tunnels` + the routing/node selects became **`dpn`**, `app_relocation` became
   **`app_relocator`**, the ad/SSL/UDP switches became **`ads_security`**, and auto-update, scheduled reboot and Reboot became **`system`**.

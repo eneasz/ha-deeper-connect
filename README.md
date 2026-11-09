@@ -132,7 +132,7 @@ The map pins appear as `device_tracker` entities and work with the Map card.
 
 ## Polling and availability
 Everything is read from the device every 60 s (configurable): live data (health, resources, traffic, clients, tunnels) each poll;
-settings and the app table every 5th poll; firmware and device settings every 30th. Changing something from HA refreshes the slower
+settings, public IP and the app table about every 5 minutes; firmware and device settings about every 30 minutes (never less often than the poll itself). Changing something from HA refreshes the slower
 data straight away. If one endpoint fails, its entities keep the last value for two polls, then show **unavailable** until it works
 again (the rest keep updating); the log has one warning when that starts and an info line when it recovers, and the diagnostics
 download lists failing endpoints.
