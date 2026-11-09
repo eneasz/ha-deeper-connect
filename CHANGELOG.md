@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.2
+- **Fix: entities of clients and apps you stop watching are removed.** Taking a client off *Configure → Clients to watch* used to leave its
+  route-mode and blackholed sensors behind as permanently "unavailable" entities, and taking an app off the app list did the same to its dropdown.
+  They are now removed on the next reload. This only happens for a list you have saved; if you never changed a list, nothing is removed.
+- README: the verification table now records that the client routing select (disabled, full tunnel, back to smart) and the Reboot button
+  were exercised through Home Assistant on a real device.
+
 ## 0.12.1
 - **Fix: the Reboot button no longer reports an error when the device reboots.** Checked on a real device: it restarts but drops the connection
   instead of answering, so the request timed out and Home Assistant showed a failure although the reboot worked. A timeout or dropped

@@ -55,7 +55,7 @@ entities and its API calls are not made.
 | `ads_security` (Ads Blocker, Security) | YouTube ad blocking, SSL bypass and UDP server switches | on |
 | `system` (Settings, Device) | auto-update and scheduled-reboot switches, reboot time, Reboot button | on |
 
-Turning a group off removes its entities from the registry. Tunnel health still feeds `Health` and `Tunnel problem` either way.
+Turning a group off removes its entities from the registry, and so does taking a client off *Clients to watch* or an app off the app list. Tunnel health still feeds `Health` and `Tunnel problem` either way.
 Upgrading from 0.7.x: your saved choices are converted automatically (the old `controls` group became `dpn`, `ads_security` and `system`);
 entity ids and history are unchanged.
 
@@ -166,8 +166,8 @@ current value was sent back unchanged: it proves the request shape is accepted, 
 | App relocation (set to a tunnel, clear) | Yes | Setting `direct` (UI's `LL` code) |
 | Routing mode, node selection, reboot schedule, auto-update, UDP server | Accepted as no-op re-send | Switching to a *different* routing mode |
 | Ad filter and SSL bypass switches | Accepted as no-op re-send | Real on/off change |
-| Client routing select (opt-in) | The device accepted full tunnel, direct and blackhole on one client (each re-read showed only that client's route changed, 17 others untouched) and the switch back to smart. Tested through the API client, not yet through the HA select entity | Real traffic behaviour of each mode |
-| Reboot request (`POST /api/admin/reboot`, off by default as a button) | The device restarted (about a minute offline; all 81 entities returned, none renamed). The request timed out with no response body because the device dropped the connection while restarting. Since 0.12.1 the button treats that timeout or dropped connection as success (other failures still raise) | Pressing the button in HA |
+| Client routing select (opt-in) | Through the HA select entity (0.12.1): disabled, full tunnel (PL) and back to smart on one client; the device's own route sensor agreed at each step and no other client changed. Earlier, through the API client: blackhole too | Real traffic behaviour of each mode |
+| Reboot button (off by default) | Pressed in HA (0.12.1): the call returned success after the 15 s client timeout, the device restarted (about a minute offline), all 81 entities came back with the same ids | |
 | Reconfigure flow | Form opens in HA with the current host and username | Saving a change, and the wrong-device refusal |
 | DHCP discovery (`dcn-mini`) | Matcher accepted by hassfest | Discovery of a new or moved device |
 | Repairs: device unreachable | | Yes (timer, once-only raise, cleanup on recovery) |

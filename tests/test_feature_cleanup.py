@@ -115,3 +115,50 @@ def test_client_routing_selects_are_kept_when_client_control_is_on(monkeypatch):
 def test_client_routing_selects_go_with_access_control_even_if_control_is_on(monkeypatch):
     reg = _run(monkeypatch, ("dpn",), {"client_control": True}, [*ENTITIES, (SELECT, "main")])
     assert SELECT not in reg.uids
+
+
+# --- entities of clients / apps the user took off their lists -------------------------------------------------------
+
+MAC1, MAC2 = "aa:bb:cc:00:00:03", "aa:bb:cc:00:00:04"
+CLIENT_ENTITIES = [(f"e1_client_{m}_{k}", "main") for m in (MAC1, MAC2) for k in ("route", "blackholed", "route_select")]
+APP_ENTITIES = [("e1_app_netflix", "main"), ("e1_app_youtube", "main"), ("e1_app_sig", "main"), ("e1_relocated_apps", "main")]
+
+
+def _uids(prefix):
+    return {u for u, _ in prefix}
+
+
+def test_unwatched_client_loses_all_its_entities_and_the_watched_one_keeps_them(monkeypatch):
+    reg = _run(monkeypatch, ALL, {"access_clients": [MAC1], "client_control": True}, CLIENT_ENTITIES)
+    assert reg.uids == {u for u, _ in CLIENT_ENTITIES if MAC1 in u}
+
+
+def test_client_choice_is_matched_case_insensitively(monkeypatch):
+    reg = _run(monkeypatch, ALL, {"access_clients": [MAC1.upper()], "client_control": True}, CLIENT_ENTITIES)
+    assert reg.uids == {u for u, _ in CLIENT_ENTITIES if MAC1 in u}
+
+
+def test_empty_client_choice_removes_every_client_entity(monkeypatch):
+    reg = _run(monkeypatch, ALL, {"access_clients": [], "client_control": True}, CLIENT_ENTITIES)
+    assert reg.uids == set()
+
+
+def test_never_configured_client_list_removes_nothing(monkeypatch):
+    # No saved choice: the watched set is the pins on the device, which are only known from live data.
+    reg = _run(monkeypatch, ALL, {"client_control": True}, CLIENT_ENTITIES)
+    assert reg.uids == _uids(CLIENT_ENTITIES)
+
+
+def test_deselected_app_dropdown_is_removed_and_the_chosen_one_kept(monkeypatch):
+    reg = _run(monkeypatch, ALL, {"apps": ["netflix"]}, APP_ENTITIES)
+    assert reg.uids == {"e1_app_netflix", "e1_app_sig", "e1_relocated_apps"}   # the signature sensor is not an app
+
+
+def test_never_configured_app_list_removes_nothing(monkeypatch):
+    reg = _run(monkeypatch, ALL, {}, APP_ENTITIES)
+    assert reg.uids == _uids(APP_ENTITIES)
+
+
+def test_empty_app_choice_removes_every_dropdown_but_not_the_overview_sensors(monkeypatch):
+    reg = _run(monkeypatch, ALL, {"apps": []}, APP_ENTITIES)
+    assert reg.uids == {"e1_app_sig", "e1_relocated_apps"}

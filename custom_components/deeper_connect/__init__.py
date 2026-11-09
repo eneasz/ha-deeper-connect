@@ -12,9 +12,9 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
 from .api import DeeperClient, DeeperError
-from .const import CONF_CLIENT_CONTROL, CONF_FEATURES, CONFIG_VERSION, DOMAIN, FEATURE_APPS, FEATURE_DPN, PLATFORMS
+from .const import CONF_APPS, CONF_CLIENT_CONTROL, CONF_CLIENTS, CONF_FEATURES, CONFIG_VERSION, DOMAIN, FEATURE_APPS, FEATURE_DPN, PLATFORMS
 from .coordinator import DeeperCoordinator
-from .features import CLIENT_SELECT_RE, features_owning, migrate_features
+from .features import CLIENT_ENTITY_RE, CLIENT_SELECT_RE, features_owning, migrate_features
 from .util import DIRECT, NOT_SET, find_app, option_to_code, routing_request
 
 type DeeperConfigEntry = ConfigEntry[DeeperCoordinator]
@@ -125,13 +125,23 @@ def _remove_disabled_feature_entities(hass: HomeAssistant, entry: DeeperConfigEn
     """Drop registry entries (and emptied tunnel sub-devices) belonging to feature groups that are switched off."""
     registry = er.async_get(hass)
     prefix = f"{entry.entry_id}_"
+    # Only an explicitly saved choice counts: when never configured the defaults come from live device data.
+    watched = entry.options.get(CONF_CLIENTS)
+    watched = None if watched is None else {m.lower() for m in watched}
+    apps = entry.options.get(CONF_APPS)
     for ent in er.async_entries_for_config_entry(registry, entry.entry_id):
         uid = ent.unique_id
-        needs = features_owning(uid[len(prefix):]) if uid.startswith(prefix) else set()
+        rest = uid[len(prefix):] if uid.startswith(prefix) else ""
+        needs = features_owning(rest) if rest else set()
+        client = CLIENT_ENTITY_RE.match(rest)
         if needs and not needs <= features:
             registry.async_remove(ent.entity_id)
-        elif not entry.options.get(CONF_CLIENT_CONTROL) and CLIENT_SELECT_RE.match(uid[len(prefix):]):
+        elif not entry.options.get(CONF_CLIENT_CONTROL) and CLIENT_SELECT_RE.match(rest):
             registry.async_remove(ent.entity_id)  # client routing is opt-in: drop the selects when it is switched off
+        elif client and watched is not None and client["mac"] not in watched:
+            registry.async_remove(ent.entity_id)  # the client was taken off the watch list
+        elif apps is not None and rest.startswith("app_") and rest != "app_sig" and rest[4:] not in apps:
+            registry.async_remove(ent.entity_id)  # the app was taken off the dropdown list
     devices = dr.async_get(hass)
     for dev in dr.async_entries_for_config_entry(devices, entry.entry_id):
         if (DOMAIN, entry.entry_id) not in dev.identifiers and not er.async_entries_for_device(
