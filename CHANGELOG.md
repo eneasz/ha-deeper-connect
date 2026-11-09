@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.1
+- **Fix: the Reboot button no longer reports an error when the device reboots.** Checked on a real device: it restarts but drops the connection
+  instead of answering, so the request timed out and Home Assistant showed a failure although the reboot worked. A timeout or dropped
+  connection after the reboot request now counts as success. A failed login, an unreachable device, an HTTP error or an explicit refusal
+  from the device still raise.
+- README: the verification table now records the hardware checks of client routing (full tunnel, direct, blackhole on one client) and of the reboot request.
+
 ## 0.12.0
 - **Repairs issue when the device stays unreachable.** After 15 minutes without an answer (a reboot is much shorter) a *Deeper device
   not reachable* issue appears under Settings → Repairs, naming the address and pointing to *Reconfigure*. It clears itself on the

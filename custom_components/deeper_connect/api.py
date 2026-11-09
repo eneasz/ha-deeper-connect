@@ -168,4 +168,18 @@ class DeeperClient:
         return _check(await self.post("/api/accessControl/setOne", body))
 
     async def reboot(self) -> Any:
-        return await self.post("/api/admin/reboot")
+        """Reboot the device.
+
+        Verified on hardware (9 Nov 2026): the device restarts but drops the connection instead of answering, so the
+        request times out or is cut. That counts as success. A failed login, an unreachable device (login happens first,
+        outside the try), an HTTP error or an explicit refusal still raise.
+        """
+        await self.ensure_login()
+        try:
+            return await self.post("/api/admin/reboot")
+        except asyncio.TimeoutError:
+            pass
+        except DeeperConnectionError as err:
+            if not isinstance(err.__cause__, aiohttp.ClientConnectionError):
+                raise
+        return {"success": True, "assumed": "connection dropped while the device restarted"}
