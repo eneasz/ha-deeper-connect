@@ -22,6 +22,8 @@ from .features import enabled_features, polled
 
 _LOGGER = logging.getLogger(__name__)
 
+LOCKOUT_GRACE_SECONDS = 3600  # rejected logins after a good session are retried this long before asking for a new password
+
 # Which endpoints belong to which feature is declared in features.SPECS (medium=/slow=); the rest is always polled.
 FAST = {  # every poll
     "usage": "/api/system-info/usage",
@@ -82,6 +84,7 @@ class DeeperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._clock = time.monotonic  # replaced in tests
         self._down_since: float | None = None  # when the device first stopped answering (None: it is answering)
         self._issue_open = False
+        self._auth_failed_since: float | None = None  # when logins started being rejected after a good session
 
     @property
     def endpoint_failures(self) -> dict[str, int]:
@@ -165,10 +168,19 @@ class DeeperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if due_slow:
                 self._last_slow = now
         except DeeperAuthError as err:
+            # A login that worked earlier and is now rejected is almost always the device's login lockout (or a
+            # session that expired), not a changed password. Keep retrying (the client backs off) and only ask for
+            # re-authentication when it has been rejected for LOCKOUT_GRACE_SECONDS.
+            if getattr(self.client, "ever_logged_in", False):
+                if self._auth_failed_since is None:
+                    self._auth_failed_since = now
+                if now - self._auth_failed_since < LOCKOUT_GRACE_SECONDS:
+                    raise UpdateFailed(f"{err}; will retry") from err
             raise ConfigEntryAuthFailed from err
         except DeeperError as err:
             self._note_failure()
             raise UpdateFailed(str(err)) from err
+        self._auth_failed_since = None
         self._note_success()
         data: dict[str, Any] = {k: self._cache.get(k) for k in (*FAST, *medium, *slow)}
         data["tunnels"] = {t["tunnelCode"]: t for t in tunnels if isinstance(t, dict) and "tunnelCode" in t}

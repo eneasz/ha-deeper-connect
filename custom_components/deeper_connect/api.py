@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import time
 from typing import Any
 
 import aiohttp
@@ -10,6 +11,9 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 
 from .const import LOGIN_PUBLIC_KEY
+
+
+LOGIN_BACKOFF_SECONDS = 900  # the device refuses logins for a while after a burst; do not keep poking it
 
 
 class DeeperError(Exception):
@@ -52,15 +56,18 @@ class DeeperClient:
         self._user, self._pw = username, password
         self._logged_in = False
         self._lock = asyncio.Lock()
+        self._gen = 0  # bumped on every successful login, so parallel 401s can tell someone already re-logged in
+        self.ever_logged_in = False  # a rejected login after a good session is a lockout, not a wrong password
+        self._blocked_until = 0.0  # monotonic time before which no new login is attempted (device lockout backoff)
 
     async def _req(self, method: str, path: str, json: Any = None, retry: bool = True) -> Any:
+        gen = self._gen
         try:
             async with self._s.request(method, self._base + path, json=json, ssl=False,
                                        timeout=aiohttp.ClientTimeout(total=15)) as r:
                 if r.status == 401:
-                    self._logged_in = False
                     if retry:
-                        await self.login()
+                        await self._relogin(gen)
                         return await self._req(method, path, json, retry=False)
                     raise DeeperAuthError("unauthorized")
                 r.raise_for_status()
@@ -73,7 +80,17 @@ class DeeperClient:
             if not self._logged_in:
                 await self.login()
 
+    async def _relogin(self, gen: int) -> None:
+        """Re-login after a 401, once. The poll fires ~12 requests in parallel and an expired session makes all of them
+        see a 401 at the same moment; one login each looks like a brute-force attempt and the device locks logins out."""
+        async with self._lock:
+            if self._gen == gen:  # nobody has logged in since this request started
+                self._logged_in = False
+                await self.login()
+
     async def login(self) -> None:
+        if time.monotonic() < self._blocked_until:
+            raise DeeperAuthError("login rejected (backing off after a lockout)")
         try:
             async with self._s.post(self._base + "/api/admin/login", ssl=False,
                                     json={"username": self._user, "password": _encrypt(self._pw)},
@@ -82,8 +99,13 @@ class DeeperClient:
         except (aiohttp.ClientError, asyncio.TimeoutError) as err:
             raise DeeperConnectionError(str(err) or type(err).__name__) from err
         if not (isinstance(data, dict) and data.get("success")):
+            if self.ever_logged_in:
+                self._blocked_until = time.monotonic() + LOGIN_BACKOFF_SECONDS
             raise DeeperAuthError("login rejected")
         self._logged_in = True
+        self._gen += 1
+        self.ever_logged_in = True
+        self._blocked_until = 0.0
 
     async def get(self, path: str) -> Any:
         await self.ensure_login()

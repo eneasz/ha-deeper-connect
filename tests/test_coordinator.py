@@ -356,3 +356,37 @@ def test_unload_removes_an_open_issue(monkeypatch):
     c.clear_issue()
     c.clear_issue()  # second call is a no-op
     assert issues.deleted == ["device_unreachable_e1"]
+
+
+def test_rejected_login_after_a_good_session_is_retried_not_reauth_until_the_grace_period_ends():
+    from homeassistant.exceptions import ConfigEntryAuthFailed
+    from homeassistant.helpers.update_coordinator import UpdateFailed
+    from deeper_connect.api import DeeperAuthError
+    from deeper_connect.coordinator import LOCKOUT_GRACE_SECONDS
+
+    client = FakeClient(tunnels_exc=DeeperAuthError("login rejected"))
+    client.ever_logged_in = True  # the integration had a working session before
+    c = make((), client)
+    with pytest.raises(UpdateFailed):
+        run(c._async_update_data())
+    c.now += LOCKOUT_GRACE_SECONDS / 2
+    with pytest.raises(UpdateFailed):
+        run(c._async_update_data())
+    c.now += LOCKOUT_GRACE_SECONDS  # still rejected an hour later: the password really is wrong
+    with pytest.raises(ConfigEntryAuthFailed):
+        run(c._async_update_data())
+
+
+def test_a_good_poll_clears_the_lockout_clock():
+    from homeassistant.helpers.update_coordinator import UpdateFailed
+    from deeper_connect.api import DeeperAuthError
+
+    client = FakeClient(tunnels_exc=DeeperAuthError("login rejected"))
+    client.ever_logged_in = True
+    c = make((), client)
+    with pytest.raises(UpdateFailed):
+        run(c._async_update_data())
+    assert c._auth_failed_since is not None
+    client._tunnels_exc = None
+    poll(c)
+    assert c._auth_failed_since is None

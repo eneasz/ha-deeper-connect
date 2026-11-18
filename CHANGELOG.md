@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.13.1
+- **Fix: the integration no longer locks itself out of the device.** The device ends a login session after about an hour. The poll sends
+  around a dozen requests in parallel, so every one of them saw the expired session and logged in on its own. The device treats that burst
+  as an attack and refuses all logins for a long time, and the integration then reported "login rejected" and asked for re-authentication
+  although the password had not changed. An expired session now costs one login: one request logs in and the others wait for it.
+- **A rejected login after a working session is treated as a lockout, not a wrong password.** The client waits 15 minutes before trying
+  again, and the integration keeps retrying quietly. It only asks for re-authentication when logins have been refused for a full hour. A
+  wrong password on the very first login still asks straight away. A lockout does not raise the *device not reachable* Repairs issue.
+
 ## 0.13.0
 - **New: shared traffic sensors.** *Shared traffic upload* and *Shared traffic download* show the data the device reports as `serverTraffic`,
   that is traffic from other Deeper users that went through your device while Bandwidth sharing is on. They are totals, so they stay at 0
